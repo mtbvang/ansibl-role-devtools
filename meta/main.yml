@@ -47,8 +47,7 @@ dependencies:
     tags: vagrant
   - src: https://github.com/mtbvang/ansible-role-virtualbox
     name: virtualbox
-    when: 
-      - ansible_os_family == 'RedHat'
+    when:
       - devtools_dep_virtualbox_enabled | bool == true
     tags: virtualbox
   - src: https://github.com/geerlingguy/ansible-role-git

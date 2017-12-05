@@ -112,17 +112,27 @@
   shell: 'dig www.google.com'
   register: dnsdig
   when: 
-    - ansible_os_family == 'RedHat'
-    - devtools_dns != ""
+    - not(
+          (devtools_dns is undefined)
+          or
+          (devtools_dns is none)
+          or
+          (devtools_dns | trim == '')
+        )
   tags: dns,setnameserver,setresolvconf
   
 - name: Check set DNS nameserver
   fail:
-    msg: "Expected reply from ping to .local domain."
+    msg: "Expected reply from ping to www.google.com."
   when: 
-    - (dnsdig.stdout | regex_search("www.google.com.    184 IN  A ") == -1)
-    - ansible_os_family == 'RedHat'
-    - devtools_dns != ""
+    - dnsdig.stdout | regex_search("www.google.com.    184 IN  A ") == -1
+    - not(
+          (devtools_dns is undefined)
+          or
+          (devtools_dns is none)
+          or
+          (devtools_dns | trim == '')
+        )
   tags: dns,setnameserver,setresolvconf
   
 - name: Test npm conf and gulp install

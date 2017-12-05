@@ -3,27 +3,27 @@
   when: ansible_os_family == 'RedHat'
   tags: always
 
-- include: ./subtasks/redhat/inc_os_setup_centos.yml
+- import_tasks: ./subtasks/redhat/inc_os_setup_centos.yml
   when: 
     - ansible_distribution == 'CentOS'
     - devtools_os_set_enabled | bool == true
 
-- include: ./subtasks/redhat/inc_os_setup.yml
+- import_tasks: ./subtasks/redhat/inc_os_setup.yml
   when: 
     - ansible_distribution == 'RedHat'
     - devtools_os_set_enabled | bool == true
 
-- include: ./subtasks/redhat/inc_os_packages.yml
+- import_tasks: ./subtasks/redhat/inc_os_packages.yml
   when: 
     - ansible_os_family == 'RedHat'
     - devtools_os_packages_enabled | bool == true
 
-- include: ./subtasks/redhat/inc_java.yml
+- import_tasks: ./subtasks/redhat/inc_java.yml
   when: 
     - ansible_distribution == 'RedHat'
     - devtools_java_enabled | bool == true
 
-- include: ./subtasks/redhat/inc_java_centos.yml
+- import_tasks: ./subtasks/redhat/inc_java_centos.yml
   when: 
     - ansible_distribution == 'CentOS'
     - devtools_java_enabled | bool == true

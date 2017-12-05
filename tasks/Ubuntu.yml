@@ -24,8 +24,39 @@
     - git
     - unzip
     - zip
+    - nodejs
   become: true
   tags: debug,installpackages
+
+- name: Symlink nodejs to node
+  shell: ln -s -f /usr/bin/nodejs /usr/bin/node
+  become: true
+  tags: npm,node
+  
+- name: Set java home env var
+  lineinfile:
+    dest: /etc/environment
+    line: 'JAVA_HOME="{{ devtools_var_java_home }}"'
+    backup: no
+  become: true
+  tags: java
+
+- name: Test JAVA_HOME set correctly for Centos for {{ devtools_user }} user.
+  shell: env | grep -i JAVA_HOME
+  register: javahome
+  ignore_errors: yes
+  become: true
+  become_user: "{{ devtools_user }}"
+  failed_when: (javahome.stdout.find("{{ devtools_var_java_home }}") == -1)
+  tags: java,test
+
+- name: Test JAVA_HOME set correctly for Centos for root user.
+  shell: env | grep -i JAVA_HOME
+  register: javahome
+  ignore_errors: yes
+  become: true
+  failed_when: (javahome.stdout.find("{{ devtools_var_java_home }}") == -1)
+  tags: java,test
 
 # Example adhoc command to run debug task.
 # ansible-playbook --connection=ssh --timeout=30 --limit="devhost" --inventory-file=/home/osboxes/code/ansible-role-devtools/.{{ devtools_user }}/provisioners/ansible/inventory --sudo --start-at-task="ansible-role-devtools : Debug variables" --step -vvvv tests/{{ devtools_user }}.yml
@@ -82,12 +113,6 @@
   notify: update tzdata
   tags: locale
 
-
-- name: Set proxy ignore for internal addresses
-  command: "{{ item }}"
-  with_items:
-    - dbus-launch gsettings set org.gnome.system.proxy ignore-hosts "{{ devtools_no_proxy }}"
-
 - name: Add Arc theme
   apt_repository:
     repo: ppa:noobslab/themes
@@ -118,10 +143,6 @@
     cache_valid_time: "{{ devtools_apt_cache_valid_time }}"
 
 - name: set git config
-  template: src=.gitconfig.j2 dest=~/.gitconfig
-  become: false
-
-- name: set ansible config
   template: src=.gitconfig.j2 dest=~/.gitconfig
   become: false
 

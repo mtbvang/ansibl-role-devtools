@@ -26,19 +26,12 @@ boxes = [
 	:cpu => VM_CPU_CAP,
 	:ram => VM_MEMORY
 	},
-#	 {
-#	 :name => "rhel",
-#	 :box => "mrlesmithjr/rhel-7",
-#	 :version => "20160421.0",
-#	 :cpu => VM_CPU_CAP,
-#	 :ram => VM_MEMORY
-#	 },
-#	 {
-#	 :name => "ubuntu",
-#	 :box => "boxcutter/ubuntu1604-desktop",
-#	 :cpu => VM_CPU_CAP,
-#	 :ram => VM_MEMORY
-#	 },
+	{
+	:name => "ubuntu",
+	:box => "boxcutter/ubuntu1604-desktop",
+	:cpu => VM_CPU_CAP,
+	:ram => VM_MEMORY
+	},
 ]
 
 Vagrant.configure("2") do |config|
@@ -79,21 +72,17 @@ Vagrant.configure("2") do |config|
 				v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
 				vms.vm.synced_folder '../', '/vagrant', type: "virtualbox", disabled: false
 			end
+		
+			vms.vm.provider "vmware_workstation" do |v|
+				v.gui = VM_GUI
+				v.vmx["memsize"] = box[:ram]
+				v.vmx["numvcpus"] = VM_CPUS
+			end
 
 			if box[:name].eql? "centos"
 				vms.vm.provision "shell",
 				inline: "echo 'Work around for epel bug https://bugs.centos.org/view.php?id=13669&nbn=1' && rpm -ivh --replacepkgs https://kojipkgs.fedoraproject.org/packages/http-parser/2.7.1/3.el7/x86_64/http-parser-2.7.1-3.el7.x86_64.rpm"
 			end
-
-#			 if box[:name].eql? "ubuntu"
-#				 vms.vm.provision "shell",
-#				 inline: "echo 'Installing python 2 required by Ansible.' && sudo apt	-get -y install python-minimal"
-#			 end
-#			
-#				if box[:name].eql? "rhel"
-#				 vms.vm.provision "shell",
-#				 inline: "echo 'Subscribing to rhel-7-server-optional-rpms repo' && subscription-manager repos --enable=rhel-7-server-optional-rpms"
-#			 end
 		 
 			vms.vm.provision :ansible_local do |ansible|
 				ansible.verbose = "v"
@@ -102,7 +91,7 @@ Vagrant.configure("2") do |config|
 				#ansible.version = "2.2.1.0"
 				ansible.playbook = "#{PROJECT_NAME}/tests/#{ANSIBLE_PLAYBOOK}"
 				ansible.galaxy_role_file = "#{PROJECT_NAME}/requirements.yml"
-				ansible.galaxy_roles_path = "#{PROJECT_NAME}/tests/.roles"
+				ansible.galaxy_roles_path = "#{PROJECT_NAME}/tests/roles"
 				ansible.galaxy_command = "ansible-galaxy install --ignore-certs --role-file=%{role_file} --roles-path=%{roles_path} #{ANSIBLE_GALAXY_FORCE}"
 				ansible.become = true
 			end

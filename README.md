@@ -1,31 +1,50 @@
-Role Name
+ansible-role-devtools
 =========
 
-A brief description of the role goes here.
+Install development tools on Centos and Ubuntu host OSes.
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+Virtualbox and/or VMWare workstation
+Vagrant
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+Look in vars and defaults folders.
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+Look in requirements.yml
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+Look at tests/test.yml
 
-    - hosts: servers
-      roles:
-         - { role: ansible-role-devtools, x: 42 }
+Running Tests
+-------------
+
+The molecule testing framework doesn't seem to be working properly. I have posted a question on https://groups.google.com/forum/#!topic/molecule-users/26jJPT-apbU.
+
+Tests can also be run through the gradle tasks that use vagrant.
+
+To run all tasks against the default vagrant provider and the ubuntu VM e.g.:
+´´´
+./gradlew testintegration -PvagrantVMName=ubuntu
+´´´
+
+To run a subset of tasks use the ansibleTags parameter to only call a subset of Ansible tasks that have been tagged e.g.:
+´´´
+./gradlew testintegration -PvagrantVMName=ubuntu -PansibleTags=java
+´´´
+
+To skip a gradle dependency use the -x flage e.g.:
+´´´
+./gradlew testintegration -PvagrantVMName=ubuntu -PansibleTags=all -x ansibleRolesCleanAndInstall
+´´´
 
 License
 -------

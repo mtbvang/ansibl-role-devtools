@@ -56,7 +56,7 @@ def noProxy = project.hasProperty('noProxy') ? project.property('noProxy'): "${S
 
 def ansibleTags = project.hasProperty('ansibleTags') ? project.property('ansibleTags') : 'all'
 def ansibleVerbosity = project.hasProperty('ansibleVerbosity') ? project.property('ansibleVerbosity') : 'v'
-def ansibleRolesPath = project.hasProperty('ansibleRolesPath') ? project.property('ansibleRolesPath') : "${projectDir}/tests/.roles"
+def ansibleRolesPath = project.hasProperty('ansibleRolesPath') ? project.property('ansibleRolesPath') : "${projectDir}/tests/roles"
 def ansiblePlaybook = project.hasProperty('ansiblePlaybook') ? project.property('ansiblePlaybook') : 'test.yml'
 def ansibleGalaxyForce = project.hasProperty('ansibleGalaxyForce') ? project.property('ansibleGalaxyForce') : '--force'
 
@@ -70,7 +70,7 @@ ext.runAnsibleTagsFromGuest = { tags, rolesPath, verbosity ->
 
 ext.runAnsibleTagsFromHost = { tags, rolesPath, verbosity, testPlaybook ->	 
 	description 'Run ansible tasks specified by commandline property named tags. Same as runAsnibleTagsFromGuest but runnable from the VM host.'
-	def command = "ANSIBLE_ROLES_PATH=${rolesPath} ansible-playbook --become --inventory-file=/tmp/vagrant-ansible/inventory /vagrant/${project.name}/tests/${testPlaybook} -${verbosity} --tags=${ansibleTags}"
+	def command = "ANSIBLE_ROLES_PATH=${rolesPath} ansible-playbook --become -i 'localhost,' -c local /vagrant/${project.name}/tests/${testPlaybook} -${verbosity} --tags=${ansibleTags}"
 	println command
 	exec {
 	  commandLine "bash", "-c", "vagrant ssh ${vagrantVMName} -c '${command}'"
@@ -238,8 +238,7 @@ task ansibleRolesCleanAndInstall {
 task testIntegration(dependsOn: 'ansibleRolesCleanAndInstall') {
 	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
 	doFirst {
-		ansibleRolesPath = "/vagrant/${project.name}/tests/.roles"
-		runAnsibleTagsFromHost(ansibleTags, ansibleRolesPath, ansibleVerbosity, 'test.yml')
+		runAnsibleTagsFromHost(ansibleTags, ansibleRolesPath, ansibleVerbosity, ansiblePlaybook)
 	}
 	group = "Testing"
 }

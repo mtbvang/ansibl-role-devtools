@@ -14,10 +14,9 @@
       devtools_password: vagrant
       
 # Run tests. TODO move these inline to the subtasks to fail faster.
-
   tasks:
-    - include: ../tests/inc_tests.yml
-    - include: ../tests/inc_tests_redhat.yml
+    - import_tasks: ../tests/inc_tests.yml
+    - import_tasks: ../tests/inc_tests_redhat.yml
       when: ansible_os_family == 'RedHat'
-    - include: ../tests/inc_tests_ubuntu.yml
+    - import_tasks: ../tests/inc_tests_ubuntu.yml
       when: ansible_distribution == 'Ubuntu'

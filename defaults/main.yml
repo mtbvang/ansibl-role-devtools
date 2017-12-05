@@ -28,14 +28,14 @@ devtools_vagrant_default_provider: virtualbox
 devtools_vagrant_run: false
 
 devtools_packer_url: https://releases.hashicorp.com/packer
-devtools_packer_version: 0.12.2
-devtools_packer_sha256: 035d0ea1fe785ab6b673bc2a79399125d4014f29151e106635fa818bb726bebf
+devtools_packer_version: 1.1.2
+devtools_packer_sha256: 7e315a6110333d9d4269ac2ec5c68e663d82a4575d3e853996a976875612724b
 
 devtools_maven_version: 3.3.9
 devtools_maven_md5: 516923b3955b6035ba6b0a5b031fbd8b
 devtools_maven_filename: "apache-maven-{{ devtools_maven_version }}-bin.tar.gz"
 devtools_maven_url: "http://mirrors.rackhosting.com/apache/maven/maven-3/{{ devtools_maven_version }}/binaries/{{ devtools_maven_filename }}"
 
-devtools_gradle_version: 3.1
+devtools_gradle_version: 4.3
 
 devtools_npm_registry: https://registry.npmjs.org/
