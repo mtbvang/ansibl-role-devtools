@@ -1,0 +1,162 @@
+---
+- include_vars: Ubuntu.yml
+  when: ansible_distribution == 'Ubuntu'
+  tags: always
+
+# TODO refactor out desktop specific things to a desktop role
+- name: Update repo cache and install packages
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+    state: present
+  with_items:
+    - htop
+    - chromium-browser
+    - openjdk-8-jdk
+    - unity-tweak-tool
+    - openjfx
+    - telnet
+    - wget
+    - npm
+    - python-appindicator    # required for x-tile
+    - curl
+    - xclip
+    - git
+    - unzip
+    - zip
+  become: true
+  tags: debug,installpackages
+
+# Example adhoc command to run debug task.
+# ansible-playbook --connection=ssh --timeout=30 --limit="devhost" --inventory-file=/home/osboxes/code/ansible-role-devtools/.{{ devtools_user }}/provisioners/ansible/inventory --sudo --start-at-task="ansible-role-devtools : Debug variables" --step -vvvv tests/{{ devtools_user }}.yml
+- name: Debugging task. Modify as required.
+  debug:
+    var: devtools_http_proxy
+    verbosity: 4
+  tags: debugmain
+
+- name: Create docker group
+  group:
+    name:
+      docker
+    state: present
+  tags: createdevhostuser
+
+- name: Create devhost main user
+  user:
+    name: "{{ devtools_user }}"
+    password: "{{ devtools_password | password_hash('sha512') }}"
+    update_password: on_create
+    state: present
+    groups: docker,sudo
+  tags: createdevhostuser
+
+- name: Install open vm tools if on VMWare
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+    state: present
+  with_items:
+    - openjdk-9-jre
+    - open-vm-tools
+    - open-vm-tools-desktop
+  when: "ansible_virtualization_type == 'VMware'"
+  become: true
+
+- name: Set dns
+  lineinfile:
+    dest: /etc/network/interfaces
+    line: "dns-nameservers {{ devtools_dns }}"
+    backup: yes
+  become: true
+
+# Set ubuntu specific local and timezone to resovle issue with terminal not opening in Vitualbox. local_gen does not work.
+- name: set locale
+  shell: /usr/sbin/locale-gen {{ devtools_locale }} && /usr/sbin/update-locale LANG={{ devtools_locale }} LC_ALL={{ devtools_locale }}
+  tags: locale
+- name: set /etc/localtime
+  file: src=/usr/share/zoneinfo/{{ devtools_timezone }} dest=/etc/localtime state=link force=yes
+  tags: locale
+- name: set /etc/timezone
+  template: src=timezone.j2 dest=/etc/timezone
+  notify: update tzdata
+  tags: locale
+
+
+- name: Set proxy ignore for internal addresses
+  command: "{{ item }}"
+  with_items:
+    - dbus-launch gsettings set org.gnome.system.proxy ignore-hosts "{{ devtools_no_proxy }}"
+
+- name: Add Arc theme
+  apt_repository:
+    repo: ppa:noobslab/themes
+    mode: '644'
+    update_cache: yes
+    state: present
+    validate_certs: "{{ devtools_validate_certs }}"
+
+- name: Install (or update) arc theme package
+  apt:
+    name: arc-theme
+    state: "{{ 'latest' if devtools_update_packages else 'present' }}"
+    update_cache: "{{ devtools_update_packages }}"
+    cache_valid_time: "{{ devtools_apt_cache_valid_time }}"
+
+- name: Add X-Tile Windows Manager
+  apt_repository:
+    repo: ppa:giuspen/ppa
+    mode: '644'
+    update_cache: yes
+    state: present
+    validate_certs: "{{ devtools_validate_certs }}"
+- name: Install (or update) X-Tile Windows Manager
+  apt:
+    name: x-tile
+    state: "{{ 'latest' if devtools_update_packages else 'present' }}"
+    update_cache: "{{ devtools_update_packages }}"
+    cache_valid_time: "{{ devtools_apt_cache_valid_time }}"
+
+- name: set git config
+  template: src=.gitconfig.j2 dest=~/.gitconfig
+  become: false
+
+- name: set ansible config
+  template: src=.gitconfig.j2 dest=~/.gitconfig
+  become: false
+
+- name: Add flux repo
+  apt_repository:
+    repo: ppa:nathan-renniewaldock/flux
+    mode: '644'
+    update_cache: yes
+    state: present
+    validate_certs: "{{ devtools_validate_certs }}"
+  tags: flux
+- name: Install Flux
+  apt:
+    name: fluxgui
+    state: "{{ 'latest' if devtools_update_packages else 'present' }}"
+    update_cache: "{{ devtools_update_packages }}"
+    cache_valid_time: "{{ devtools_apt_cache_valid_time }}"
+  tags: flux
+
+- name: Set dns name server
+  lineinfile:
+    dest: /etc/resolvconf/resolv.conf.d/base
+    line: "nameserver {{ devtools_dns }}"
+    backup: no
+  when: not(
+          (devtools_dns is undefined)
+          or
+          (devtools_dns is none)
+          or
+          (devtools_dns | trim == '')
+        )
+  become: true
+  tags: dns,setnameserver,setrsolvconf
+
+- name: Update resolv conf
+  command: "resolvconf -u"
+  tags: dns,setnameserver,setrsolvconf
+  become: yes

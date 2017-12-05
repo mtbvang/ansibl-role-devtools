@@ -1,0 +1,293 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
+buildscript {
+	repositories {
+		maven { url "https://plugins.gradle.org/m2/" }
+		jcenter()
+	}
+	dependencies {
+		classpath "gradle.plugin.com.dorongold.plugins:task-tree:1.3"
+		classpath "org.hidetake:gradle-ssh-plugin:2.8.0"
+		classpath "net.rdrei.android.buildtimetracker:gradle-plugin:0.11.+"
+	}
+}
+
+apply plugin: "com.dorongold.task-tree"
+apply plugin: "org.hidetake.ssh"
+apply plugin: "build-time-tracker"
+
+buildtimetracker {
+	reporters {
+		summary {
+			ordered false
+			threshold 1
+			barstyle "unicode"
+		}
+	}
+}
+
+defaultTasks 'up'
+
+def projectParentDir = file(new File("$projectDir/../").absolutePath)
+
+// FIXME Replace with gradle devtools plugin.
+
+/*
+ * Project parameters: Values that can be overriden through -Pname=value
+ * 
+ * vagrantVMName		- The name of the vagrant VM that commands apply to.
+ * vagrantProvider 	- The virutal machine provider to bring up the VM.
+ * vagrantGui	  	- True will bring up a desktop for the VM.
+ * vagrantVMMemory 	- The amount of RAM assigned to the VM in MB
+ * vagrantTesting	- Whether or not vagrant spins up the VM in testing mode. Look at what is being done with the TESTING variable in /Vagrantfile.
+ * 
+ */
+def vagrantVMName = project.hasProperty('vagrantVMName') ? project.property('vagrantVMName') : 'centos'
+def vagrantProvider = project.hasProperty('vagrantProvider') ? project.property('vagrantProvider') : 'virtualbox'
+def vagrantGui = project.hasProperty('vagrantGui') ? project.property('vagrantGui') : true
+def vagrantVMMemory = project.hasProperty('vagrantVMMemory') ? project.property('vagrantVMMemory') : 6144
+def vagrantTesting = project.hasProperty('vagrantTesting') ? project.property('vagrantTesting') : false
+def vagrantVBGuest = project.hasProperty('vagrantVBGuest') ? project.property('vagrantVBGuest') : true
+def vagrantVMCPUs = project.hasProperty('vagrantVMCPUs') ? project.property('vagrantVMCPUs') : 2
+def vagrantHTTPProxy = project.hasProperty('vagrantHTTPProxy') ? project.property('vagrantHTTPProxy') : "${System.env.HTTP_PROXY}"	// Guest OS http_proxy value set by vagrant
+def vagrantHTTPSProxy = project.hasProperty('vagrantHTTPSProxy') ? project.property('vagrantHTTPSProxy') : "${System.env.HTTPS_PROXY}"	// Guest OS https_proxy value set by vagrant
+def vagrantProvision = project.hasProperty('vagrantProvision') ? project.property('vagrantProvision') : '--provision'
+def noProxy = project.hasProperty('noProxy') ? project.property('noProxy'): "${System.env.NO_PROXY}"
+
+def ansibleTags = project.hasProperty('ansibleTags') ? project.property('ansibleTags') : 'all'
+def ansibleVerbosity = project.hasProperty('ansibleVerbosity') ? project.property('ansibleVerbosity') : 'v'
+def ansibleRolesPath = project.hasProperty('ansibleRolesPath') ? project.property('ansibleRolesPath') : "${projectDir}/tests/.roles"
+def ansiblePlaybook = project.hasProperty('ansiblePlaybook') ? project.property('ansiblePlaybook') : 'test.yml'
+def ansibleGalaxyForce = project.hasProperty('ansibleGalaxyForce') ? project.property('ansibleGalaxyForce') : '--force'
+
+ext.runAnsibleTagsFromGuest = { tags, rolesPath, verbosity ->
+	description 'Run ansible tasks specified by commandline property named tags. User must be running from inside guest VM since windows does not have ansible.'	
+	exec { 
+		commandLine "bash", "-c", "ANSIBLE_STDOUT_CALLBACK=debug ANSIBLE_ROLES_PATH='${rolesPath}' " \
+			+ "ansible-playbook --become --inventory-file=/tmp/vagrant-ansible/inventory /vagrant/${project.name}/tests/test.yml --tags=${ansibleTags} -${verbosity}" 
+	}
+}
+
+ext.runAnsibleTagsFromHost = { tags, rolesPath, verbosity, testPlaybook ->	 
+	description 'Run ansible tasks specified by commandline property named tags. Same as runAsnibleTagsFromGuest but runnable from the VM host.'
+	def command = "ANSIBLE_ROLES_PATH=${rolesPath} ansible-playbook --become --inventory-file=/tmp/vagrant-ansible/inventory /vagrant/${project.name}/tests/${testPlaybook} -${verbosity} --tags=${ansibleTags}"
+	println command
+	exec {
+	  commandLine "bash", "-c", "vagrant ssh ${vagrantVMName} -c '${command}'"
+	}
+	
+}
+
+ext.ansibleGalaxyCleanAndInstall = { 
+	description 'Run ansible galaxy from with in the guest VM. Calls the provision/ansible_galaxy.sh script that cleans and updates all roles.'
+	exec { 
+		commandLine "bash", "-c", "vagrant ssh $vagrantVMName -c '/vagrant/${project.name}/tests/ansible_galaxy.sh ${project.name} --force'" 
+	}
+}
+task ansibleRunTags() {
+	description = 'Runs ansible tags on the vagrant guest without the vagrant overhead. Useful for testing. \n' \
+		+ "* Parameter: ansibleTags - default=''. List of tags to run. \n" \
+		+ "* Parameter: limit - default=''. Limit selected hosts to run. \n" \
+		+ "* Parameter: ansibleVerbosity - default='-v'. Verbosity of logging. v to vvvv. \n" \
+		+ "* Parameter: ansibleRolePath - default='projectDir/tests/roles'. \n" \
+		+ "* Example usage: ./gradlew -PansibleTags=mvn ansibleRunTags"
+
+	doFirst {
+		runAnsibleTagsFromGuest(ansibleTags, ansibleRolesPath, ansibleVerbosity)
+	}
+}
+
+task vagrantInstallPlugins(type: Exec) {
+	description 'Installs vagrant plugins.'
+	doFirst {
+		if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+			commandLine "bash", "-c", "source ~/.bash_profile && pon && vagrant plugin install vagrant-sshfs vagrant-cachier vagrant-proxyconf vagrant-vbguest"
+		} else {
+			commandLine "bash", "-c", "vagrant plugin install vagrant-sshfs vagrant-cachier vagrant-proxyconf vagrant-vbguest"
+		}
+	}
+}
+
+task vagrantUp(type: Exec) {
+	description = "Bring up the VM with vagrant" \
+		+ "* Parameter: vagrantVMMemory - default=6144. Memory in MB to assing to the VM. \n" \
+		+ "* Parameter: vagrantTesting  - default=false. Whether or not vagrant spins up the VM in testing mode. Look at what is being done with the TESTING variable in /Vagrantfile. \n" \
+		+ "* Parameter: vagrantVMName	- default=centos. The name of the vagrant VM that this command applies to. Set to blank for all VMs. \n" \
+		+ "* Parameter: vagrantProvider - default=virtualbox. The virutal machine provider to bring up the VM. \n" \
+		+ "* Parameter: vagrantGui	  - default=true. True will bring up a desktop for the VM. \n" \
+		+ "* Parameter: proxyServer	 - default=10.53.99.81:3128. The proxy server name and port string used to contruct the full http and https strings. \n"
+		
+	doFirst {
+			commandLine "bash", "-c", "TESTING=$vagrantTesting " \
+			+ "ANSIBLE_PLAYBOOK=$ansiblePlaybook " \
+			+ "ANSIBLE_GALAXY_FORCE=$ansibleGalaxyForce " \
+			+ "VAGRANT_HTTP_PROXY=$vagrantHTTPProxy " \
+			+ "VAGRANT_HTTPS_PROXY=$vagrantHTTPSProxy " \
+			+ "VM_MEMORY=$vagrantVMMemory " \
+			+ "VM_GUI=$vagrantGui " \
+			+ "VM_CPUS=$vagrantVMCPUs " \
+			+ "VAGRANT_NO_PROXY=$noProxy " \
+			+ "vagrant up ${vagrantVMName}"
+	}
+}
+
+task vagrantReload() {
+	description 'Halt and restart the local development VM. \n' \
+		+ "* Parameter: vagrantVMMemory 	- default=6144. Memory in MB to assing to the VM. \n" \
+		+ "* Parameter: vagrantTesting  	- default=false. Whether or not vagrant spins up the VM in testing mode. Look at what is being done with the TESTING variable in /Vagrantfile. \n" \
+		+ "* Parameter: vagrantVMName		- default=centos. The name of the vagrant VM that this command applies to. Set to blank for all VMs. \n" \
+		+ "* Parameter: vagrantProvider 	- default=virtualbox. The virutal machine provider to bring up the VM. \n" \
+		+ "* Parameter: vagrantGui	  	- default=true. True will bring up a desktop for the VM. \n" \
+		+ "* Parameter: noProxy	  	- default=${noProxy}. The no proxy environment variable. \n" \
+		+ "* Parameter: proxyServer	 	- default=10.53.99.81:3128. The proxy server name and port string used to contruct the full http and https strings. \n"
+		
+	doFirst {
+		exec {
+			commandLine "bash", "-c", "TESTING=$vagrantTesting " \
+			+ "VAGRANT_HTTP_PROXY=$vagrantHTTPProxy " \
+			+ "VAGRANT_HTTPS_PROXY=$vagrantHTTPSProxy " \
+			+ "VM_MEMORY=$vagrantVMMemory " \
+			+ "VM_GUI=$vagrantGui " \
+			+ "VM_CPUS=$vagrantVMCPUs " \
+			+ "VAGRANT_NO_PROXY=$noProxy " \
+			+ "vagrant reload ${vagrantVMName}"
+		}
+	}
+	vagrantReload.group = "Usefull"
+
+}
+
+task up(dependsOn: [
+	'vagrantUp',
+	'vagrantInstallPlugins'
+]
+) { 
+	description = "DEFAULT TASK: Bring up and provision all definied VMs." 
+	up.group = "Usefull"
+	// Ordering for up task
+	vagrantUp.mustRunAfter(vagrantInstallPlugins)
+}
+
+task destroy() {
+	description 'Destroy all VMs. If you want to destroy a particular VM run \'vagrant destroy -f VM_NAME\''
+	doFirst {
+		exec { 
+			ignoreExitValue = true
+			commandLine "bash", "-c", "vagrant destroy -f ${vagrantVMName}" 
+		}
+	}
+}
+
+task recreate(dependsOn: ['destroy', 'up']) { 
+	description 'Destroy and up the local development VM' 
+	// Ensure task ordering for recreate
+	up.mustRunAfter(destroy)
+	group = "Usefull"
+} 
+
+task testUnitFromGuest() { 
+	description "Note: Windows users can't run this role. Run unit style test by using ansible tags to run specific tasks. Tag all your tasks during development so that they can be run to give this style of test.\n" \
+		+ "* Parameter: ansibleTags - default=''. List of tags to run. \n" \
+		+ "* Parameter: ansibleVerbosity - default='-v'. Verbosity of logging. v to vvvv. \n" \
+		+ "* Parameter: ansibleRolePath - default='projectDir/tests/roles'. \n" \
+		+ "* Example usage: ./gradlew -PansibleTtags=setnsswitch testunit"
+		
+	doFirst { 
+		runAnsibleTagsFromGuest(ansibleTags, ansibleRolesPath, ansibleVerbosity)
+	}	
+	group = "Testing"
+}
+
+task testUnit() { 
+	description 'Run unit style test by using ansible tags to run specific tasks. Tag all your tasks during development so that they can be run to give this style of test.\n' \
+		+ "* Parameter: ansibleTags - default=''. List of tags to run. \n" \
+		+ "* Parameter: ansibleVerbosity - default='-v'. Verbosity of logging. -v to -vvvv. \n" \
+		+ "* Parameter: ansibleRolePath - default='projectDir/tests/roles'. \n" \
+		+ "* Example usage: ./gradlew -PansibleTags=setnsswitch testunitfromhost"
+		
+	doFirst { 
+		runAnsibleTagsFromHost(ansibleTags, ansibleRolesPath, ansibleVerbosity)
+	}	
+	group = "Testing"
+}
+
+task testComponent() { 
+	description 'Run component tests by using ansible tags to run specific tasks. Like unitTests task, but use component style ansible tagging.\n' \
+		+ "* Parameter: ansibleTags - default=''. List of tags to run. \n" \
+		+ "* Parameter: ansibleRolePath - default='projectDir/tests/roles'. " \
+		+ "* Example usage: ./gradlew -PansibleTags=dns testcomponent"
+		
+	doFirst { 
+		runAnsibleTags()
+	}	
+	group = "Testing"
+}
+
+task testIntegrationWithCleanVM(dependsOn: 'recreate') {
+	description 'Calls recreate. This task is here more for documentation and convenience.'
+	group = "Testing"  
+}
+
+task ansibleRolesCleanAndInstall { 
+	description 'Clean and updates ansible roles.'
+	doFirst { 
+		ansibleGalaxyCleanAndInstall()
+	}
+}
+
+task testIntegration(dependsOn: 'ansibleRolesCleanAndInstall') {
+	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
+	doFirst {
+		ansibleRolesPath = "/vagrant/${project.name}/tests/.roles"
+		runAnsibleTagsFromHost(ansibleTags, ansibleRolesPath, ansibleVerbosity, 'test.yml')
+	}
+	group = "Testing"
+}
+
+
+task testIntegrationAllTasksDisabled(dependsOn: 'destroy') { 
+	description '''
+	Test all flags sued to disable tasks so that nothing gets installed. Integration tests the role by running vagrant ansibleGalaxy and 
+	ansiblePlaybook provisioners within the guest VM via the vagrant ansible_local provisioner. The provisioning scripts run by vagrant 
+	will delete all roles to force their download. To rerun the playbook on the existing VM run gradle with the -x option e.g.: 
+	./gradlew testintegrationalltasksdisabled -x destroy'''
+	
+	doFirst {
+		exec { 
+			commandLine "bash", "-c", "TESTING=$vagrantTesting " \
+			+ "ANSIBLE_PLAYBOOK='testAllTasksDisabled.yml' " \
+			+ "ANSIBLE_GALAXY_FORCE=$ansibleGalaxyForce " \
+			+ "VAGRANT_HTTP_PROXY=$vagrantHTTPProxy " \
+			+ "VAGRANT_HTTPS_PROXY=$vagrantHTTPSProxy " \
+			+ "VM_MEMORY=$vagrantVMMemory " \
+			+ "VM_GUI=$vagrantGui " \
+			+ "VM_CPUS=$vagrantVMCPUs " \
+			+ "VAGRANT_NO_PROXY=$noProxy " \
+			+ "vagrant up ${vagrantVMName} ${vagrantProvision}"
+		}
+	}
+	group = "Testing"
+	
+}
+
+task testIntegrationFromGuest(type: Exec) {
+	description = "Integration tests the role by running ansible playbook. Run this from within the guest from /vagrant/project_name"
+	doFirst { 
+		runAnsibleTagsFromGuest(ansibleTags, ansibleRolesPath, ansibleVerbosity)
+	}
+	group = "Testing"
+}
+
+
+task syncToWindows { 
+	description 'Rsyncs this project over to windows' \
+		+ "* Parameter: ansibleTags - default=''. List of tags to run. \n" \
+		
+	def winMnt = project.hasProperty('winMnt') ? project.property('winMnt') : "/mnt/hgfs/code/${project.name}"
+	doFirst {
+		exec { commandLine "bash", "-c", "rsync --exclude .vagrant --exclude .gradle -ruv ./ ${winMnt}" }
+	}
+	group = "windows"
+
+}
+

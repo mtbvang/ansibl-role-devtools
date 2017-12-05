@@ -1,0 +1,23 @@
+---
+# Ansible galaxy command: sudo ansible-galaxy install -c -v -r requirements.yml
+# Asnible galaxy vagrant testing command: ansible-galaxy install -p tests/roles -c -v -r requirements.yml
+# - src: angstwad.docker_ubuntu
+#   name: docker-ubuntu
+- src: https://github.com/mtbvang/ansible-role-repo-epel
+  name: epel
+  version: 1.2.1
+- src: https://github.com/mtbvang/ansible-role-docker-1
+  name: docker
+  version: 0.1.0
+- src: https://github.com/mtbvang/ansible-role-vagrant
+  name: vagrant
+  version: v1.0.1
+- src: https://github.com/mtbvang/ansible-role-virtualbox
+  name: virtualbox
+  version: 0.1.0
+- src: https://github.com/geerlingguy/ansible-role-git
+  name: git
+  version: 1.3.0
+- src: https://github.com/mtbvang/ansible-role-ansible
+  name: ansible
+  version: 1.2.0

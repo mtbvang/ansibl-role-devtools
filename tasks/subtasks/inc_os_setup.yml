@@ -1,0 +1,38 @@
+---
+- name: Create "{{ devtools_user }}" user code directory
+  file:
+    path: /home/{{ devtools_user }}/code
+    state: directory
+    mode: 0755
+    owner: "{{ devtools_user }}"
+    group: "{{ devtools_group }}"
+  tags: codedir
+
+- name: Install sudoers file
+  copy:
+    src: 'sudoers-{{ ansible_distribution }}'
+    dest: /etc/sudoers
+    owner: root
+    group: root
+    mode: 0440
+  when: ansible_distribution != 'RedHat'
+
+- name: Install bash profile file
+  copy:
+    src: 'bash_profile'
+    dest: "/home/{{ devtools_user }}/.bash_profile"
+    owner: "{{ devtools_user }}"
+    group: "{{ devtools_group }}"
+    mode: 0644
+  become: true
+  become_user: "{{ devtools_user }}"
+  tags: bashprofile
+
+- name: Set nsswitch conf
+  copy:
+    src: 'nsswitch.conf-{{ ansible_distribution }}'
+    dest: /etc/nsswitch.conf
+    owner: root
+    group: root
+    mode: 0644
+  tags: dns,setnsswitch

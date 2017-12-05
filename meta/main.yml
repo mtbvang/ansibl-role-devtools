@@ -1,0 +1,62 @@
+---
+galaxy_info:
+  author: Vang Nguyen
+  description: Software Engineer
+  license: MIT
+  min_ansible_version: 2.2.1.0
+
+  platforms:
+    - name: RHEL
+      versions:
+        - 7
+
+  galaxy_tags:
+    - devtools
+
+dependencies:
+  - src: https://github.com/mtbvang/ansible-role-repo-epel
+    name: epel
+    epel_proxy_env:
+      https_proxy: "{{ devtools_http_proxy }}"
+      http_proxy: "{{ devtools_http_proxy }}"
+    when: ansible_os_family == 'RedHat'
+    tags: epel
+  - src: https://github.com/mtbvang/ansible-role-ansible
+    name: ansible
+    ansible_proxy_env: 
+      https_proxy: "{{ devtools_http_proxy }}"
+      http_proxy: "{{ devtools_http_proxy }}"
+    when: devtools_dep_ansible_enabled | bool == true
+    tags: ansible
+  - src: https://github.com/mtbvang/ansible-role-docker-1
+    name: docker
+    docker_http_proxy: "{{ devtools_http_proxy }}"
+    docker_https_proxy: "{{ devtools_https_proxy }}"
+    docker_no_proxy: "{{ devtools_docker_no_proxy }}"
+    docker_group_members: "{{ devtools_user }}"
+    docker_version_rhel: 1.13.1
+    docker_version_deb: 1.13.1*
+    docker_yum_state: present
+    when: devtools_dep_docker_enabled | bool == true
+    tags: docker
+  - src: https://github.com/mtbvang/ansible-role-vagrant
+    name: vagrant
+    vagrant_version: "1.9.1"
+    validate_certs: "{{ devtools_validate_certs }}"
+    when: devtools_dep_vagrant_enabled | bool == true
+    tags: vagrant
+  - src: https://github.com/mtbvang/ansible-role-virtualbox
+    name: virtualbox
+    when: 
+      - ansible_os_family == 'RedHat'
+      - devtools_dep_virtualbox_enabled | bool == true
+    tags: virtualbox
+  - src: https://github.com/geerlingguy/ansible-role-git
+    name: git
+    git_packages:
+      - git
+    git_install_from_source: true
+    git_install_from_source_force_update: true
+    git_version: "2.9.3"
+    when: devtools_dep_git_enabled | bool == true
+    tags: git

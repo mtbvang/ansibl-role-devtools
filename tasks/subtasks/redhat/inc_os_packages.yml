@@ -1,0 +1,16 @@
+---
+- name: ensure required packages installed
+  yum:
+    name: "{{ item }}"
+    state: "{{ devtools_yum_state }}"
+    update_cache: yes
+  with_items:
+    - zip
+    - unzip
+    - telnet
+    - wget
+    - npm
+    - curl
+    - chromium
+    - bind-utils
+  tags: installpackages

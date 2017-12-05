@@ -1,0 +1,137 @@
+---
+- name: Test docker by running hello world image
+  shell: >
+    systemctl start docker
+    && docker run hello-world    
+  become: yes
+  register: dockeroutput
+  ignore_errors: yes
+  tags: test,docker,testdocker
+
+- name: Check result of hello world test
+  fail:
+    msg: "'Hello world check failed"
+  # Existence of proxy is dected through http_proy env variable.   
+  when: (dockeroutput.stdout.find("Hello from Docker!") == -1) and
+    ("{{ lookup('env','http_proxy') is undefined }}" == 'False')
+  tags: test,docker,testdocker
+
+- name: Debugging task. Change as required for debugging.
+  debug:
+    var: devtools_user
+    verbosity: 1
+  tags: debugtests,test
+  
+- name: Test for proxy ignore
+  shell: gsettings get org.gnome.system.proxy ignore-hosts
+  register: ignoredhosts
+  ignore_errors: yes
+  tags: test,proxyingnore
+- name: Check proxy ignore
+  fail:
+    msg: "'Proxy ignore check failed"
+  when: ignoredhosts.stdout | match(devtools_no_proxy)
+  tags: test,proxyingnore
+  
+- name: Packer test by testing for version
+  shell: /usr/local/sbin/packer version
+  become_user: "{{ devtools_user }}"
+  register: packeroutput
+  ignore_errors: yes
+  tags: packer,test  
+- name: Packer test version output check
+  fail:
+    msg: "Packer version run didn't return expected result"   
+  when: packeroutput.stdout.find("Packer v{{ devtools_packer_version }}") == -1
+  tags: packer,test
+
+- name: Test maven version correct
+  shell: mvn --version
+  register: mvnversion
+  tags: mvn,test
+
+- name: Check maven version
+  fail:
+    msg: "Apache Maven not at expected version 3.3.9"
+  when: mvnversion.stdout.find("Apache Maven 3.3.9") == -1
+  tags: mvn
+
+- name: Test maven settings installed
+  shell: cat /usr/share/maven/conf/settings.xml
+  register: mvnsettings
+  ignore_errors: yes
+  tags: mvn,test
+
+- name: Check maven settings
+  fail:
+    msg: "Maven settings file does not contain any settings or is missing"
+  when: mvnsettings.stdout.find("<settings") == -1
+  tags: mvn,test
+
+- name: Test hostess runnable as non sudo user
+  command: /usr/local/sbin/hostess --version
+  register: hostessversion
+  tags: hostess,test
+
+- name: Check hostess
+  fail:
+    msg: "Expected hostess version 0.1.0"
+  when: hostessversion.stdout.find("hostess version 0.1.0") == -1
+  tags: hostess,test
+
+- name: Test /etc/environment 
+  command: cat /etc/environment
+  register: etcenv
+  tags: etcenv,test
+
+- name: Check /etc/environment
+  fail:
+    msg: "Expected to find http_proxy,https_proxy,no_proxy in upper and lower case, JAVA_HOME"
+  when: (etcenv.stdout.find(item) == -1)
+  with_items:
+    - "HTTP_PROXY=http"
+    - "http_proxy=http"
+    - "HTTPS_PROXY=http:"
+    - "https_proxy=http:"
+    - "NO_PROXY="
+    - "no_proxy="
+  tags: etcenv,test
+
+- name: Test set nsswitch conf
+  shell: 'cat /etc/nsswitch.conf | grep "files dns"'
+  register: grepnsswitch
+  tags: dns,setnsswitch,test
+  
+- name: Check set nsswitch conf
+  fail:
+    msg: "Expected 'files dns mdns4_minimals' in /etc/nsswitch.conf file. The dns entry must appear before the mdns4 entries for .local domains to work."
+  when: (grepnsswitch.stdout.find("files dns") == -1)
+  tags: dns,setnsswitch,test
+  
+- name: Test set DNS
+  shell: 'dig www.google.com'
+  register: dnsdig
+  when: 
+    - ansible_os_family == 'RedHat'
+    - devtools_dns != ""
+  tags: dns,setnameserver,setresolvconf
+  
+- name: Check set DNS nameserver
+  fail:
+    msg: "Expected reply from ping to .local domain."
+  when: 
+    - (dnsdig.stdout | regex_search("www.google.com.    184 IN  A ") == -1)
+    - ansible_os_family == 'RedHat'
+    - devtools_dns != ""
+  tags: dns,setnameserver,setresolvconf
+  
+- name: Test npm conf and gulp install
+  shell: 'gulp -v'
+  register: gulpversion
+  tags: gulptest,test
+  
+- name: Check npm conf and gulp install
+  fail:
+    msg: "Gulp doesn't seem to be installed. Checking the version didn't return the expected result."
+  when: (gulpversion.stdout.find("CLI version") == -1)
+  tags: gulptest,test

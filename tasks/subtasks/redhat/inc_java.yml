@@ -1,0 +1,34 @@
+---
+- name: Install Java
+  yum:
+    name: "{{ item }}"
+    state: "{{ devtools_yum_state }}"
+  with_items:
+    - "{{ devtools_var_java_headless_package }}"
+    - "{{ devtools_var_java_package }}"
+  tags: installpackages,java
+
+- name: Set java home env var
+  lineinfile:
+    dest: /etc/environment
+    line: 'JAVA_HOME="{{ devtools_var_java_home }}"'
+    backup: no
+  become: true
+  tags: java
+
+- name: Test JAVA_HOME set correctly for Centos for {{ devtools_user }} user.
+  shell: env | grep -i JAVA_HOME
+  register: redhatjavahome
+  ignore_errors: yes
+  become: true
+  become_user: "{{ devtools_user }}"
+  failed_when: (redhatjavahome.stdout.find("{{ devtools_var_java_home }}") == -1)
+  tags: java,test
+
+- name: Test JAVA_HOME set correctly for Centos for root user.
+  shell: env | grep -i JAVA_HOME
+  register: redhatjavahome
+  ignore_errors: yes
+  become: true
+  failed_when: (redhatjavahome.stdout.find("{{ devtools_var_java_home }}") == -1)
+  tags: java,test

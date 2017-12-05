@@ -1,0 +1,30 @@
+---
+- name: configure npm registry
+  shell: npm config set registry {{ devtools_npm_registry }}
+  args:
+     executable: /bin/bash
+  become: true
+  tags: npmconf,npm
+
+- name: configure npm proxy
+  shell: "npm config set proxy {{ devtools_http_proxy }} && npm config set https-proxy {{ devtools_https_proxy }}"
+  args:
+     executable: /bin/bash
+  become: true
+  tags: npmconf,npm
+
+- name: npm install gulp globally
+  shell: "npm config list && npm install -g gulp"
+  args:
+     executable: /bin/bash
+     creates: /usr/bin/gulp
+  become: true
+  tags: npm,gulpinstall,gulp
+
+- name: npm install yarn
+  shell: npm install -g yarn
+  args:
+     executable: /bin/bash
+     creates: /usr/bin/yarn
+  become: true
+  tags: npm,yarninstall,yarn

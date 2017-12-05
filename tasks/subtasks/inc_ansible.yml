@@ -1,0 +1,44 @@
+- name: Install ansible toolbox stat
+  shell: ansible-role
+  register: toolbox
+  ignore_errors: yes
+  tags: toolbox
+
+- name: Ansible toolbox clonerepo for install
+  git:
+    repo: https://github.com/larsks/ansible-toolbox
+    dest: /home/{{ devtools_user }}/code/ansible-toolbox
+    force: yes
+  when: toolbox.stderr.find("usage") == -1 
+  become: true
+  become_user: "{{ devtools_user }}"
+  tags: toolbox
+
+- file:
+    path: /home/{{ devtools_user }}/code/ansible-toolbox/setup.py
+    mode: 0755
+  when: toolbox.stderr.find("usage") == -1 
+    
+- name: Install ansible toolbox
+  command: python setup.py install --user
+  args:
+    chdir: /home/{{ devtools_user }}/code/ansible-toolbox
+  when: toolbox.stderr.find("usage") == -1 
+  become: true
+  become_user: "{{ devtools_user }}"
+  tags: toolbox
+
+- name: Create ansible global config directory
+  file:
+    path: /etc/ansible
+    state: directory
+  tags: ansible,ansible.conf
+
+- name: Install ansible config file
+  copy:
+    src: ansible.cfg
+    dest: /etc/ansible/ansible.cfg
+    owner: root
+    group: root
+    mode: 0644
+  tags: ansible,ansible-conf

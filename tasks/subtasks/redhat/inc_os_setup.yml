@@ -1,0 +1,13 @@
+---
+- name: Update etc environment
+  lineinfile:
+    dest: /etc/environment
+    line: "{{ item }}"
+  with_items:
+    - "http_proxy={{ devtools_http_proxy }}"
+    - "https_proxy={{ devtools_https_proxy }}"
+    - "HTTP_PROXY={{ devtools_http_proxy }}"
+    - "HTTPS_PROXY={{ devtools_https_proxy }}"
+    - "NO_PROXY={{ devtools_no_proxy }}"
+    - "no_proxy={{ devtools_no_proxy }}"
+  tags: etcenv

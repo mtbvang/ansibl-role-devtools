@@ -1,0 +1,14 @@
+---
+- name: Converge
+  become: true
+  hosts:
+    - all
+  pre_tasks:
+    - name: Gathering facts
+      setup:
+  roles:
+    - role: ansible-role-devtools
+      devtools_update_packages: yes
+      devtools_user: vagrant
+      devtools_password: vagrant
+

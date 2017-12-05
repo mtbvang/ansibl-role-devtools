@@ -1,0 +1,23 @@
+---
+- name: Test role
+  become: true
+  remote_user: root
+  hosts: 
+    - all
+  pre_tasks:
+    - name: Gathering facts
+      setup:
+  roles:
+    - role: ../../ansible-role-devtools
+      devtools_update_packages: yes
+      devtools_user: vagrant
+      devtools_password: vagrant
+      
+# Run tests. TODO move these inline to the subtasks to fail faster.
+
+  tasks:
+    - include: ../tests/inc_tests.yml
+    - include: ../tests/inc_tests_redhat.yml
+      when: ansible_os_family == 'RedHat'
+    - include: ../tests/inc_tests_ubuntu.yml
+      when: ansible_distribution == 'Ubuntu'

@@ -1,0 +1,54 @@
+---
+- name: Maven download stat
+  stat: path=/tmp/{{ devtools_maven_filename }}
+  register: mvn_download_stat
+  tags: mvn
+
+- name: Download maven version {{ devtools_maven_version }}
+  get_url:
+    # http://mirrors.rackhosting.com/apache/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+    url: "{{ devtools_maven_url }}"
+    dest: /tmp/{{ devtools_maven_filename }}
+    checksum: md5:{{ devtools_maven_md5 }}
+    validate_certs: no
+  environment:
+    https_proxy: "{{ devtools_http_proxy }}"
+    http_proxy: "{{ devtools_http_proxy }}"
+  become: yes
+  when: mvn_download_stat.stat.exists == false
+  tags: mvn
+
+- name: Maven extraction stat
+  stat: path=/tmp/apache-maven-{{ devtools_maven_version }}
+  register: mvn_extract_stat
+  tags: mvn
+
+- name: Maven extract
+  unarchive:
+    src: /tmp/{{ devtools_maven_filename }}
+    dest: /tmp/
+    remote_src: yes
+    validate_certs: no
+  become: yes
+  when: mvn_extract_stat.stat.exists == false
+  tags: mvn
+
+- name: Maven stat
+  stat: path=/usr/bin/mvn
+  register: mvn_stat
+  tags: mvn
+
+- name: Maven install
+  shell: mv /tmp/apache-maven-{{ devtools_maven_version }} /usr/share/maven && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
+  when: mvn_stat.stat.exists == false
+  tags: mvn
+
+- name: Install maven settings
+  copy:
+    src: settings.xml
+    dest: /usr/share/maven/conf/settings.xml
+    owner: root
+    group: root
+    mode: 0644
+    force: yes
+  tags: mvn

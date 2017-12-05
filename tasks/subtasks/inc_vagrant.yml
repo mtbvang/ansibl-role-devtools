@@ -1,0 +1,18 @@
+---
+# FIXME move to ansible-role-vagrant
+- name: Install vagrant plugins
+  command: "{{ item }}"
+  with_items:
+    - vagrant plugin install vagrant-cachier --plugin-version 1.2.1
+    - vagrant plugin install vagrant-proxyconf --plugin-version 1.5.2
+    - vagrant plugin install vagrant-vmware-workstation --plugin-version 4.0.15
+  become: false
+
+- name: Set vagrant default env var
+  lineinfile:
+    dest: /etc/environment
+    line: 'VAGRANT_DEFAULT_PROVIDER="{{ devtools_vagrant_default_provider }}"'
+    backup: no
+  when: devtools_vagrant_run
+  become: true
+  tags: etcenv

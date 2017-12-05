@@ -1,0 +1,33 @@
+---
+- name: Packer download stat
+  stat: path=/tmp/"packer_{{ devtools_packer_version }}_linux_amd64.zip"
+  register: packer_download_stat
+  tags: packer
+
+- name: Packer download
+  get_url:
+    url: "{{ devtools_packer_url }}/{{ devtools_packer_version }}/packer_{{ devtools_packer_version }}_linux_amd64.zip"
+    dest: /tmp/packer_{{ devtools_packer_version }}_linux_amd64.zip
+    sha256sum: "{{ devtools_packer_sha256 }}"
+    validate_certs: no
+  environment:
+    https_proxy: "{{ devtools_http_proxy }}"
+    http_proxy: "{{ devtools_http_proxy }}"
+  become: yes
+  when: packer_download_stat.stat.exists == false
+  tags: packer
+
+- name: Packer extraction and install stat
+  stat: path=/tmp/"packer_{{ devtools_packer_version }}_linux_amd64"
+  register: packer_extract_stat
+  tags: packer
+
+- name: Packer extract and install
+  unarchive:
+    src: /tmp/packer_{{ devtools_packer_version }}_linux_amd64.zip
+    dest: /usr/local/sbin
+    remote_src: yes
+    validate_certs: no
+  become: yes
+  when: packer_extract_stat.stat.exists == false
+  tags: packer

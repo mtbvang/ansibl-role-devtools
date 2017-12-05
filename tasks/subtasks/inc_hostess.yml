@@ -1,0 +1,14 @@
+---
+- name: Hostess tool stat
+  stat: path=/usr/local/sbin/hostess
+  register: hostess_stat
+  tags: hostess
+
+- name: Install hostess
+  command: "{{ item }}"
+  with_items:
+    - curl -o /usr/local/sbin/hostess -L https://github.com/cbednarski/hostess/releases/download/v0.2.0/hostess_linux_amd64
+    - chmod 755 /usr/local/sbin/hostess
+  when: hostess_stat.stat.exists == false
+  tags: hostess
+  become: yes

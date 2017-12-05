@@ -1,0 +1,9 @@
+127.0.0.1 localhost
+127.0.1.1 osboxes
+172.28.128.6 aloha-helloworld-msa.rhel-cdk.172.28.128.6.xip.io frontend-helloworld-msa.rhel-cdk.172.28.128.6.nip.io hub.openshift.rhel-cdk.172.28.128.6.xip.io ola-helloworld-msa.rhel-cdk.172.28.128.6.nip.io gogs-cicd.rhel-cdk.172.28.128.6.xip.io jenkins-cicd.rhel-cdk.172.28.128.6.xip.io sonarqube-cicd.rhel-cdk.172.28.128.6.xip.io 172.28 nexus-cicd.rhel-cdk.172.28.128.6.xip.io gogs-cicd.rhel-cdk.172.28.128.6.xip.io
+::1 ip6-localhost ip6-loopback
+fe00:: ip6-localnet
+ff00:: ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+

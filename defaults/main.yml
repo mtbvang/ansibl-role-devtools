@@ -1,0 +1,41 @@
+---
+# defaults file for ansible-role-devtools
+
+# Development user that will be the main user.
+devtools_user: vagrant
+devtools_group: vagrant
+devtools_password: vagrant
+
+# Set to 'yes' or 'true' to enable updates (sets 'latest' in apt module)
+devtools_update_packages: no
+devtools_apt_cache_valid_time: 600
+devtools_validate_certs: no
+devtools_yum_state: present
+
+# Ubuntu system proxy ignore settings
+# Note the 172.28.128.6 is a non static ip for openshift. There is bug in vagrant that's preventing
+devtools_no_proxy: "{{ lookup('env','NO_PROXY') }}"
+devtools_http_proxy: "{{ lookup('env','HTTP_PROXY') }}"
+devtools_https_proxy: "{{ lookup('env','HTTPS_PROXY') }}"
+devtools_dns: 10.0.2.3
+devtools_docker_no_proxy: "{{ lookup('env','NO_PROXY') }}"
+
+# Local and timezone settings
+devtools_locale: en_DK.UTF-8
+devtools_timezone: Europe/Copenhagen
+
+devtools_vagrant_default_provider: virtualbox
+devtools_vagrant_run: false
+
+devtools_packer_url: https://releases.hashicorp.com/packer
+devtools_packer_version: 0.12.2
+devtools_packer_sha256: 035d0ea1fe785ab6b673bc2a79399125d4014f29151e106635fa818bb726bebf
+
+devtools_maven_version: 3.3.9
+devtools_maven_md5: 516923b3955b6035ba6b0a5b031fbd8b
+devtools_maven_filename: "apache-maven-{{ devtools_maven_version }}-bin.tar.gz"
+devtools_maven_url: "http://mirrors.rackhosting.com/apache/maven/maven-3/{{ devtools_maven_version }}/binaries/{{ devtools_maven_filename }}"
+
+devtools_gradle_version: 3.1
+
+devtools_npm_registry: https://registry.npmjs.org/

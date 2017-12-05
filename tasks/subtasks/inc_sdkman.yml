@@ -1,0 +1,33 @@
+---
+# Incldues installation of all tools managed by SDKMan
+
+- stat: path=/tmp/sdkman.sh
+  register: sdkmanInstaller
+  tags: gradle
+
+- name: Download SDKMan
+  get_url:
+    url: "https://get.sdkman.io"
+    dest: /tmp/sdkman.sh
+    mode: 0755
+  when: sdkmanInstaller.stat.exists == False
+  environment:
+    https_proxy: "{{ devtools_http_proxy }}"
+    http_proxy: "{{ devtools_http_proxy }}"
+  become_user: "{{ devtools_user }}"
+  tags: gradle
+
+- name: Install SDKMan
+  shell: /tmp/sdkman.sh
+  args:
+    creates: /home/{{ devtools_user }}/.sdkman/bin/sdkman-init.sh
+  become_user: "{{ devtools_user }}"
+  tags: gradle
+
+- name: Install Gradle
+  shell: source ~/.sdkman/bin/sdkman-init.sh && sdk install gradle {{ devtools_gradle_version }}
+  args:
+    executable: /bin/bash
+    creates: /home/{{ devtools_user }}/.sdkman/candidates/gradle/current/bin/gradle
+  become_user: "{{ devtools_user }}"
+  tags: gradle

@@ -1,0 +1,20 @@
+---
+# vars file for ansible-role-devtools
+devtools_var_arch: x86_64
+devtools_var_java18: java-1.8.0-openjdk
+
+devtools_var_java_version_centos: 1.8.0.144
+devtools_var_java_epoch_centos: 1
+devtools_var_java_release_centos: 0.b01.el7_4
+devtools_var_java_headless_package_centos: "{{ devtools_var_java18 }}-headless-{{ devtools_var_java_epoch_centos }}:{{ devtools_var_java_version_centos }}-{{ devtools_var_java_release_centos }}.{{ devtools_var_arch }}"
+devtools_var_java_package_centos: "{{ devtools_var_java18 }}-devel-{{ devtools_var_java_epoch_centos }}:{{ devtools_var_java_version_centos }}-{{ devtools_var_java_release_centos }}.{{ devtools_var_arch }}"
+devtools_var_java_home_centos: "/usr/lib/jvm/{{ devtools_var_java18 }}-{{ devtools_var_java_version_centos }}-{{ devtools_var_java_release_centos }}.{{ devtools_var_arch }}/jre"
+
+devtools_var_java_version: 1.8.0.111
+devtools_var_java_epoch: 1
+devtools_var_java_release: 2.b15.el7_3
+devtools_var_java_headless_package: "{{ devtools_var_java18 }}-headless-{{ devtools_var_java_epoch }}:{{ devtools_var_java_version }}-{{ devtools_var_java_release }}.{{ devtools_var_arch }}"
+devtools_var_java_package: "{{ devtools_var_java18 }}-devel-{{ devtools_var_java_epoch }}:{{ devtools_var_java_version }}-{{ devtools_var_java_release }}.{{ devtools_var_arch }}"
+devtools_var_java_home: "/usr/lib/jvm/{{ devtools_var_java18 }}-{{ devtools_var_java_version }}-{{ devtools_var_java_release }}.{{ devtools_var_arch }}/jre"
+
+devtools_var_npm_yarn_version: 0.27.5

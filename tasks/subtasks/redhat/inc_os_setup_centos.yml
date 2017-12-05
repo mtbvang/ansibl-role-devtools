@@ -1,0 +1,16 @@
+---
+- name: Centos set dns name server resolve.conf
+  lineinfile:
+    dest: /etc/resolv.conf
+    line: "nameserver {{ devtools_dns }}"
+    backup: no
+  when: not(
+          (devtools_dns is undefined)
+          or
+          (devtools_dns is none)
+          or
+          (devtools_dns | trim == '')
+        )
+  become: true
+  tags: dns,setnameserver,setresolvconf
+

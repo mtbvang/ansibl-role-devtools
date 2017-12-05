@@ -1,0 +1,3 @@
+---
+# vars file for ansible-role-devtools
+devtools_var_java_home: /usr/lib/jvm/java-8-openjdk-amd64

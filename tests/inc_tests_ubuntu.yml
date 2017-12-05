@@ -1,0 +1,16 @@
+---
+# Ubuntu specific tests.
+
+- name: Test JAVA_HOME set correctly for Ubuntu.
+  shell: env | grep JAVA_HOME
+  register: javahome
+  ignore_errors: yes
+  when: ansible_distribution == 'Ubuntu'
+  tags: javahome
+  
+- name: Check JAVA_HOME
+  fail:
+    msg: "Expected JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64"
+  when: (javahome.stdout.find("/usr/lib/jvm/java-8-openjdk-amd64") == -1) and
+        ansible_distribution == 'Ubuntu'
+  tags: javahome

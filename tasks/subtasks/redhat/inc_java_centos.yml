@@ -1,0 +1,51 @@
+---
+- name: Install Java
+  yum:
+    name: "{{ item }}"
+    state: "{{ devtools_yum_state }}"
+  with_items:
+    - "{{ devtools_var_java_headless_package_centos }}"
+    - "{{ devtools_var_java_package_centos }}"
+  tags: installpackages,java
+
+- name: Set java home env var
+  lineinfile:
+    dest: /etc/environment
+    line: 'JAVA_HOME="{{ devtools_var_java_home_centos }}"'
+    backup: no
+  become: true
+  tags: java
+
+- name: Set java home env var in bashrc for {{ devtools_user }} user
+  lineinfile:
+    dest: /home/{{ devtools_user }}/.bashrc
+    line: 'JAVA_HOME="{{ devtools_var_java_home_centos }}"'
+    backup: no
+    insertbefore: '#THIS MUST BE AT THE END OF THE FILE'
+  become: "{{ devtools_user }}"
+  tags: java
+
+- name: Set java home env var in bashrc for root user
+  lineinfile:
+    dest: /root/.bashrc
+    line: 'JAVA_HOME="{{ devtools_var_java_home_centos }}"'
+    backup: no
+  become: true
+  tags: java
+
+- name: Test JAVA_HOME set correctly for Centos for {{ devtools_user }} user.
+  shell: source /home/{{ devtools_user }}/.bashrc && env | grep -i JAVA_HOME
+  register: redhatjavahome
+  ignore_errors: yes
+  become: true
+  become_user: "{{ devtools_user }}"
+  failed_when: (redhatjavahome.stdout.find("{{ devtools_var_java_home_centos }}") == -1)
+  tags: java,test
+
+- name: Test JAVA_HOME set correctly for Centos for root user.
+  shell: source /root/.bashrc && env | grep -i JAVA_HOME
+  register: redhatjavahome
+  ignore_errors: yes
+  become: true
+  failed_when: (redhatjavahome.stdout.find("{{ devtools_var_java_home_centos }}") == -1)
+  tags: java,test

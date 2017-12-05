@@ -1,0 +1,25 @@
+---
+# vars file for ansible-role-devtools
+
+# Flags to enable dependencies for devtools specified in meta/main.yml.
+devtools_dep_epel_enabled: true
+devtools_dep_ansible_enabled: false
+devtools_dep_docker_enabled: true
+devtools_dep_virtualbox_enabled: true
+devtools_dep_git_enabled: true
+devtools_dep_vagrant_enabled: true
+
+# Flags to enable devtools tools installed by devtools role
+# We have to flags for ansible to install and configure. Ansible should have been installed by a bootstrap
+devtools_ansible_enabled: true
+devtools_ansible_install_enabled: false
+devtools_hostess_enabled: true
+devtools_java_enabled: true
+devtools_maven_enabled: true
+devtools_npm_enabled: true
+devtools_os_set_enabled: true
+devtools_os_packages_enabled: true
+devtools_packer_enabled: true
+devtools_sdkman_enabled: true
+devtools_vagrant_enabled: true
+

@@ -1,0 +1,32 @@
+---
+- name: Test role
+  become: true
+  remote_user: root
+  hosts: 
+    - all
+  pre_tasks:
+    - name: Gathering facts
+      setup:
+  roles:
+    - role: ../../ansible-role-devtools
+      devtools_update_packages: yes
+      devtools_user: vagrant
+      devtools_password: vagrant
+      devtools_ansible_enabled: false
+      devtools_hostess_enabled: false
+      devtools_java_enabled: false
+      devtools_maven_enabled: false
+      devtools_npm_enabled: false
+      devtools_os_set_enabled: false
+      devtools_os_packages_enabled: false
+      devtools_packer_enabled: false
+      devtools_sdkman_enabled: false
+      devtools_vagrant_enabled: false
+      devtools_dep_epel_enabled: false
+      devtools_dep_ansible_enabled: false
+      devtools_dep_docker_enabled: false
+      devtools_dep_virtualbox_enabled: false
+      devtools_dep_git_enabled: false
+      devtools_dep_vagrant_enabled: false
+      
+# Tests that non off the tools are installe because tey were all disabled.

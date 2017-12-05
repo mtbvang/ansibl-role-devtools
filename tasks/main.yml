@@ -1,0 +1,27 @@
+---
+# The main file that is the entry point to this role.
+
+- include: Ubuntu.yml
+  when: ansible_distribution == 'Ubuntu'
+
+- include: RedHat.yml
+  when: ansible_os_family == 'RedHat'
+
+- include: ./subtasks/inc_os_setup.yml
+  when: devtools_os_set_enabled | bool == true
+
+# List of tools installed
+- include: ./subtasks/inc_ansible.yml
+  when: devtools_ansible_enabled | bool == true
+- include: ./subtasks/inc_hostess.yml
+  when: devtools_hostess_enabled | bool == true
+- include: ./subtasks/inc_maven.yml
+  when: devtools_maven_enabled | bool == true
+- include: ./subtasks/inc_npm.yml
+  when: devtools_npm_enabled | bool == true
+- include: ./subtasks/inc_packer.yml
+  when: devtools_packer_enabled | bool == true
+- include: ./subtasks/inc_sdkman.yml
+  when: devtools_sdkman_enabled | bool == true
+- include: ./subtasks/inc_vagrant.yml
+  when: devtools_vagrant_enabled | bool == true
