@@ -1,5 +1,6 @@
 ---
 # vars file for ansible-role-devtools
+# FIXME have _centos option causes problems with tests and vars being undefined.
 devtools_var_arch: x86_64
 devtools_var_java18: java-1.8.0-openjdk
 

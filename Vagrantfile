@@ -44,10 +44,14 @@ Vagrant.configure("2") do |config|
 		config.cache.scope = :box
 	end
 
-	if Vagrant.has_plugin?("vagrant-proxyconf") && (!HTTP_PROXY.nil? || HTTP_PROXY == 0)
-		config.proxy.http = HTTP_PROXY
-		config.proxy.https = HTTPS_PROXY
-		config.proxy.no_proxy = NO_PROXY
+	if Vagrant.has_plugin?("vagrant-proxyconf")
+		if(HTTP_PROXY.nil? || HTTP_PROXY.empty?)
+			config.proxy.enabled = false
+		else
+			config.proxy.http = HTTP_PROXY
+			config.proxy.https = HTTPS_PROXY
+			config.proxy.no_proxy = NO_PROXY
+		end
 	end
  
  	# Register redhat boxes
@@ -81,19 +85,23 @@ Vagrant.configure("2") do |config|
 
 			if box[:name].eql? "centos"
 				vms.vm.provision "shell",
-				inline: "echo 'Work around for epel bug https://bugs.centos.org/view.php?id=13669&nbn=1' && rpm -ivh --replacepkgs https://kojipkgs.fedoraproject.org/packages/http-parser/2.7.1/3.el7/x86_64/http-parser-2.7.1-3.el7.x86_64.rpm"
+				inline: "echo 'Work around for epel bug https://bugs.centos.org/view.php?id=13669&nbn=1' && sudo rpm -ivh --replacepkgs https://kojipkgs.fedoraproject.org/packages/http-parser/2.7.1/3.el7/x86_64/http-parser-2.7.1-3.el7.x86_64.rpm"
+			end
+		
+			if box[:name].eql? "ubuntu"
+				vms.vm.provision "shell",
+				inline: "sudo apt-get update && sudo apt-get -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confnew' install -y -qq build-essential curl git libssl-dev libffi-dev python-dev python-pip"
 			end
 		 
 			vms.vm.provision :ansible_local do |ansible|
 				ansible.verbose = "v"
 				ansible.install_mode = "pip"
 				ansible.version = "2.4.2.0"
-				#ansible.version = "2.2.1.0"
 				ansible.playbook = "#{PROJECT_NAME}/tests/#{ANSIBLE_PLAYBOOK}"
 				ansible.galaxy_role_file = "#{PROJECT_NAME}/requirements.yml"
 				ansible.galaxy_roles_path = "#{PROJECT_NAME}/tests/roles"
 				ansible.galaxy_command = "ansible-galaxy install --ignore-certs --role-file=%{role_file} --roles-path=%{roles_path} #{ANSIBLE_GALAXY_FORCE}"
-				ansible.sudo = true
+				ansible.become = true
 			end
 		end
 	end

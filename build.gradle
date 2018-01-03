@@ -235,9 +235,83 @@ task ansibleRolesCleanAndInstall {
 	}
 }
 
-task testIntegration(dependsOn: 'ansibleRolesCleanAndInstall') {
+task testIntegrationWithCleanVMParallel() {
 	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
 	doFirst {
+	
+		exec { 
+			ignoreExitValue = true
+			commandLine "bash", "-c", "vagrant destroy -f" 
+		}
+		
+		def commandBase = "TESTING=$vagrantTesting " \
+			+ "ANSIBLE_PLAYBOOK=$ansiblePlaybook " \
+			+ "ANSIBLE_GALAXY_FORCE=$ansibleGalaxyForce " \
+			+ "VAGRANT_HTTP_PROXY=$vagrantHTTPProxy " \
+			+ "VAGRANT_HTTPS_PROXY=$vagrantHTTPSProxy " \
+			+ "VM_MEMORY=$vagrantVMMemory " \
+			+ "VM_GUI=$vagrantGui " \
+			+ "VM_CPUS=$vagrantVMCPUs " \
+			+ "VAGRANT_NO_PROXY=$noProxy "
+			
+		def commandVagrantUpCentos = commandBase + "vagrant up centos"
+		def commandVagrantUpUbuntu = commandBase + "vagrant up ubuntu"
+		
+		ant.parallel(threadsPerProcessor: 1) { 
+			ant.exec(executable: 'sh') {
+				arg(value: '-c')
+				arg(value: "${commandVagrantUpCentos}")
+			}	
+			ant.exec(executable: 'sh') {
+				arg(value: '-c')
+				arg(value: "${commandVagrantUpUbuntu}")
+			}		
+		}
+
+	
+		def command = "ANSIBLE_ROLES_PATH=${ansibleRolesPath} ansible-playbook --become -i 'localhost,' -c local /vagrant/${project.name}/tests/${ansiblePlaybook} -${ansibleVerbosity} --tags=${ansibleTags}"
+		println command
+	
+		ant.parallel(threadsPerProcessor: 1) { 
+			ant.exec(executable: 'sh') {
+				arg(value: '-c')
+				arg(value: "vagrant ssh centos -c '${command}'")
+			}	
+			ant.exec(executable: 'sh') {
+				arg(value: '-c')
+				arg(value: "vagrant ssh ubuntu -c '${command}'")
+			}		
+		}
+	}
+	group = "Testing"
+}
+
+task testIntegrationParallel(dependsOn: 'ansibleRolesCleanAndInstall') {
+	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
+	doFirst {
+	
+		def command = "ANSIBLE_ROLES_PATH=${ansibleRolesPath} ansible-playbook --become -i 'localhost,' -c local /vagrant/${project.name}/tests/${ansiblePlaybook} -${ansibleVerbosity} --tags=${ansibleTags}"
+		println command
+	
+		ant.parallel(threadsPerProcessor: 1) { 
+			ant.exec(executable: 'sh') {
+				arg(value: '-c')
+				arg(value: "vagrant ssh centos -c '${command}'")
+			}	
+			ant.exec(executable: 'sh') {
+				arg(value: '-c')
+				arg(value: "vagrant ssh ubuntu -c '${command}'")
+			}		
+		}
+	}
+	group = "Testing"
+}
+
+task testIntegration(dependsOn: 'ansibleRolesCleanAndInstall') {
+	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
+	doFirst {	
+		runAnsibleTagsFromHost(ansibleTags, ansibleRolesPath, ansibleVerbosity, ansiblePlaybook)
+		vagrantVMName = 'ubuntu'
 		runAnsibleTagsFromHost(ansibleTags, ansibleRolesPath, ansibleVerbosity, ansiblePlaybook)
 	}
 	group = "Testing"

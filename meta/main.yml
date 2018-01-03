@@ -41,7 +41,7 @@ dependencies:
     tags: docker
   - src: https://github.com/mtbvang/ansible-role-vagrant
     name: vagrant
-    vagrant_version: "1.9.1"
+    vagrant_version: "2.0.1"
     validate_certs: "{{ devtools_validate_certs }}"
     when: devtools_dep_vagrant_enabled | bool == true
     tags: vagrant

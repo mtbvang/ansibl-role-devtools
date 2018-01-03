@@ -140,14 +140,13 @@
 
 - name: Check /etc/environment for JAVA_HOME for Centos
   fail:
-    msg: "Expected to find JAVA_HOME={{ devtools_var_java_home_centos }} in /etc/environment"
+    msg: "Expected to find JAVA_HOME=\"/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.144-0.b01.el7_4.x86_64/jre\" in /etc/environment"
   when: 
     - etcenv.stdout.find(item) == -1
     - devtools_java_enabled | bool == true
-    - devtools_var_java_home_centos != ""
     - ansible_distribution == 'CentOS' 
   with_items:
-    - 'JAVA_HOME="{{ devtools_var_java_home_centos }}"'
+    - 'JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.144-0.b01.el7_4.x86_64/jre"'
   tags: etcenv,java,test
   
 - name: Check /etc/environment for M2_HOME
