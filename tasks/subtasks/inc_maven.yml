@@ -52,3 +52,10 @@
     mode: 0644
     force: yes
   tags: mvn
+  
+- name: Add M2_HOME environment variable to /etc/environment
+  lineinfile:
+    path: /etc/environment
+    regexp: '^M2_HOME='
+    line: "M2_HOME={{ devtools_maven_home }}"
+  

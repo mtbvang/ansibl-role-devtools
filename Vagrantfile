@@ -22,7 +22,7 @@ NO_PROXY = ENV['NO_PROXY']
 boxes = [
 	{
 	:name => "centos",
-	:box => "mtbvang/centos7-desktop",
+	:box => "boxcutter/centos7-desktop",
 	:cpu => VM_CPU_CAP,
 	:ram => VM_MEMORY
 	},
@@ -44,9 +44,9 @@ Vagrant.configure("2") do |config|
 		config.cache.scope = :box
 	end
 
-	if Vagrant.has_plugin?("vagrant-proxyconf")
-		config.proxy.http		 = HTTP_PROXY
-		config.proxy.https		= HTTPS_PROXY
+	if Vagrant.has_plugin?("vagrant-proxyconf") && (!HTTP_PROXY.nil? || HTTP_PROXY == 0)
+		config.proxy.http = HTTP_PROXY
+		config.proxy.https = HTTPS_PROXY
 		config.proxy.no_proxy = NO_PROXY
 	end
  
@@ -93,7 +93,7 @@ Vagrant.configure("2") do |config|
 				ansible.galaxy_role_file = "#{PROJECT_NAME}/requirements.yml"
 				ansible.galaxy_roles_path = "#{PROJECT_NAME}/tests/roles"
 				ansible.galaxy_command = "ansible-galaxy install --ignore-certs --role-file=%{role_file} --roles-path=%{roles_path} #{ANSIBLE_GALAXY_FORCE}"
-				ansible.become = true
+				ansible.sudo = true
 			end
 		end
 	end

@@ -6,14 +6,18 @@
   become: yes
   register: dockeroutput
   ignore_errors: yes
+  when:
+    - devtools_dep_docker_enabled | bool == true
   tags: test,docker,testdocker
 
 - name: Check result of hello world test
   fail:
     msg: "'Hello world check failed"
   # Existence of proxy is dected through http_proy env variable.   
-  when: (dockeroutput.stdout.find("Hello from Docker!") == -1) and
-    ("{{ lookup('env','http_proxy') is undefined }}" == 'False')
+  when: 
+    - dockeroutput.stdout.find("Hello from Docker!") == -1
+    - lookup('env','http_proxy') is undefined | bool == false
+    - devtools_dep_docker_enabled | bool == true
   tags: test,docker,testdocker
 
 - name: Debugging task. Change as required for debugging.
@@ -27,10 +31,15 @@
   register: ignoredhosts
   ignore_errors: yes
   tags: test,proxyingnore
+  
 - name: Check proxy ignore
   fail:
     msg: "'Proxy ignore check failed"
-  when: ignoredhosts.stdout | match(devtools_no_proxy)
+  when: 
+    - ignoredhosts.stdout | match(devtools_no_proxy)
+    - devtools_no_proxy != ""
+    - ansible_distribution == 'CentOS'
+    - devtools_os_set_enabled | bool == true
   tags: test,proxyingnore
   
 - name: Packer test by testing for version
@@ -39,76 +48,135 @@
   register: packeroutput
   ignore_errors: yes
   tags: packer,test  
+  when:
+    - devtools_packer_enabled | bool == true
 - name: Packer test version output check
   fail:
     msg: "Packer version run didn't return expected result"   
-  when: packeroutput.stdout.find("Packer v{{ devtools_packer_version }}") == -1
+  when: 
+  - packeroutput.stdout.find("Packer v{{ devtools_packer_version }}") == -1
+  - devtools_packer_enabled | bool == true
   tags: packer,test
 
 - name: Test maven version correct
   shell: mvn --version
   register: mvnversion
+  when:
+    - devtools_maven_enabled
   tags: mvn,test
 
 - name: Check maven version
   fail:
     msg: "Apache Maven not at expected version 3.3.9"
-  when: mvnversion.stdout.find("Apache Maven 3.3.9") == -1
+  when:
+    - mvnversion.stdout.find("Apache Maven 3.3.9") == -1
+    - devtools_maven_enabled
   tags: mvn
 
 - name: Test maven settings installed
-  shell: cat /usr/share/maven/conf/settings.xml
+  stat:
+    path: /usr/share/maven/conf/settings.xml
   register: mvnsettings
   ignore_errors: yes
+  when:
+    - devtools_maven_enabled
   tags: mvn,test
 
 - name: Check maven settings
   fail:
     msg: "Maven settings file does not contain any settings or is missing"
-  when: mvnsettings.stdout.find("<settings") == -1
+  when:
+    - mvnsettings.stat.exists == False
+    - devtools_maven_enabled
   tags: mvn,test
 
 - name: Test hostess runnable as non sudo user
   command: /usr/local/sbin/hostess --version
   register: hostessversion
+  when:
+    - devtools_hostess_enabled | bool == true
   tags: hostess,test
 
 - name: Check hostess
   fail:
     msg: "Expected hostess version 0.1.0"
-  when: hostessversion.stdout.find("hostess version 0.1.0") == -1
+  when: 
+    - hostessversion.stdout.find("hostess version 0.1.0") == -1
+    - devtools_hostess_enabled | bool == true
   tags: hostess,test
 
-- name: Test /etc/environment 
+- name: Test /etc/environment
   command: cat /etc/environment
   register: etcenv
-  tags: etcenv,test
+  tags: etcenv,test,java,mvn
 
-- name: Check /etc/environment
+- name: Check /etc/environment for proxy
   fail:
-    msg: "Expected to find http_proxy,https_proxy,no_proxy in upper and lower case, JAVA_HOME"
-  when: (etcenv.stdout.find(item) == -1)
+    msg: "Expected to find http_proxy,https_proxy,no_proxy in upper and lower case"
+  when:
+    - etcenv.stdout.find(item) == -1
+    - devtools_os_set_enabled | bool == true
+    - devtools_http_proxy != ""
   with_items:
     - "HTTP_PROXY=http"
-    - "http_proxy=http"
+    - "http_proxy=http:"
     - "HTTPS_PROXY=http:"
     - "https_proxy=http:"
     - "NO_PROXY="
     - "no_proxy="
-  tags: etcenv,test
+  tags: etcenv,test,proxy
 
+- name: Check /etc/environment for JAVA_HOME for Ubuntu and Redhat
+  fail:
+    msg: "Expected to find JAVA_HOME in /etc/environment"
+  when: 
+    - etcenv.stdout.find(item) == -1
+    - devtools_java_enabled | bool == true
+    - devtools_var_java_home != ""
+    - ansible_distribution != 'CentOS' 
+  with_items:
+    - 'JAVA_HOME="{{ devtools_var_java_home }}"'
+  tags: etcenv,java,test
+
+- name: Check /etc/environment for JAVA_HOME for Centos
+  fail:
+    msg: "Expected to find JAVA_HOME={{ devtools_var_java_home_centos }} in /etc/environment"
+  when: 
+    - etcenv.stdout.find(item) == -1
+    - devtools_java_enabled | bool == true
+    - devtools_var_java_home_centos != ""
+    - ansible_distribution == 'CentOS' 
+  with_items:
+    - 'JAVA_HOME="{{ devtools_var_java_home_centos }}"'
+  tags: etcenv,java,test
+  
+- name: Check /etc/environment for M2_HOME
+  fail:
+    msg: "Expected to find M2_HOME in /etc/environment"
+  when: 
+    - etcenv.stdout.find(item) == -1
+    - devtools_java_enabled | bool == true
+    - devtools_maven_home != ""
+  with_items:
+    - "M2_HOME={{ devtools_maven_home }}"
+  tags: etcenv,mvn,test
+  
 - name: Test set nsswitch conf
   shell: 'cat /etc/nsswitch.conf | grep "files dns"'
   register: grepnsswitch
+  when: 
+    - devtools_os_set_enabled | bool == true
   tags: dns,setnsswitch,test
   
 - name: Check set nsswitch conf
   fail:
     msg: "Expected 'files dns mdns4_minimals' in /etc/nsswitch.conf file. The dns entry must appear before the mdns4 entries for .local domains to work."
-  when: (grepnsswitch.stdout.find("files dns") == -1)
+  when: 
+    - grepnsswitch.stdout.find("files dns") == -1
+    - devtools_os_set_enabled | bool == true
   tags: dns,setnsswitch,test
   
-- name: Test set DNS
+- name: Test DNS
   shell: 'dig www.google.com'
   register: dnsdig
   when: 
@@ -121,7 +189,7 @@
         )
   tags: dns,setnameserver,setresolvconf
   
-- name: Check set DNS nameserver
+- name: Check test DNS
   fail:
     msg: "Expected reply from ping to www.google.com."
   when: 
@@ -138,10 +206,16 @@
 - name: Test npm conf and gulp install
   shell: 'gulp -v'
   register: gulpversion
+  when:
+    - devtools_npm_enabled | bool == true
   tags: gulptest,test
   
 - name: Check npm conf and gulp install
   fail:
     msg: "Gulp doesn't seem to be installed. Checking the version didn't return the expected result."
-  when: (gulpversion.stdout.find("CLI version") == -1)
+  when: 
+    - gulpversion.stdout.find("CLI version") == -1
+    - devtools_npm_enabled | bool == true
   tags: gulptest,test
+  
+

@@ -17,7 +17,7 @@ devtools_yum_state: present
 devtools_no_proxy: "{{ lookup('env','NO_PROXY') }}"
 devtools_http_proxy: "{{ lookup('env','HTTP_PROXY') }}"
 devtools_https_proxy: "{{ lookup('env','HTTPS_PROXY') }}"
-devtools_dns: 10.0.2.3
+devtools_dns: 8.8.8.8
 devtools_docker_no_proxy: "{{ lookup('env','NO_PROXY') }}"
 
 # Local and timezone settings
@@ -35,7 +35,7 @@ devtools_maven_version: 3.3.9
 devtools_maven_md5: 516923b3955b6035ba6b0a5b031fbd8b
 devtools_maven_filename: "apache-maven-{{ devtools_maven_version }}-bin.tar.gz"
 devtools_maven_url: "http://mirrors.rackhosting.com/apache/maven/maven-3/{{ devtools_maven_version }}/binaries/{{ devtools_maven_filename }}"
-
+devtools_maven_home: '/usr/share/maven'
 devtools_gradle_version: 4.3
 
 devtools_npm_registry: https://registry.npmjs.org/
