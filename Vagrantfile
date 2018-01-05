@@ -10,8 +10,8 @@ PROJECT_NAME = ENV['PROJECT_NAME'] || File.basename(File.expand_path(File.dirnam
 ANSIBLE_PLAYBOOK = ENV['ANSIBLE_PLAYBOOK'] || 'test.yml'
 
 VM_CPUS = ENV['VM_CPUS'] || 2
-VM_CPU_CAP = ENV['VM_CPU_CAP'] || 80
-VM_MEMORY = ENV['VM_MEMORY'] || 1024
+VM_CPU_CAP = ENV['VM_CPU_CAP'] || 100
+VM_MEMORY = ENV['VM_MEMORY'] || 6144
 VM_GUI = ENV['VM_GUI'] || false
 VB_GUEST = ENV['VB_GUEST'] || false
 # Set env var ANSIBLE_GALAXY_FORCE='' to NOT force install of roles

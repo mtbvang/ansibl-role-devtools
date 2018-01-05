@@ -14,11 +14,11 @@ devtools_yum_state: present
 
 # Ubuntu system proxy ignore settings
 # Note the 172.28.128.6 is a non static ip for openshift. There is bug in vagrant that's preventing
-devtools_no_proxy: "{{ lookup('env','NO_PROXY') }}"
+devtools_no_proxy: "{{ lookup('env', 'NO_PROXY') }}"
 devtools_http_proxy: "{{ lookup('env','HTTP_PROXY') }}"
 devtools_https_proxy: "{{ lookup('env','HTTPS_PROXY') }}"
 devtools_dns: 8.8.8.8
-devtools_docker_no_proxy: "{{ lookup('env','NO_PROXY') }}"
+devtools_docker_no_proxy: "{{ lookup('env', 'NO_PROXY')|default('localhost,127.0.0.1,172.30.1.1', true) }}"
 
 # Local and timezone settings
 devtools_locale: en_DK.UTF-8
