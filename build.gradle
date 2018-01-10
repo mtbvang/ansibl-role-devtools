@@ -223,9 +223,13 @@ task testComponent() {
 	group = "Testing"
 }
 
-task testIntegrationWithCleanVM(dependsOn: 'recreate') {
+task testIntegrationWithCleanVM(dependsOn: [
+	'vagrantUp',
+	'destroy'
+]) {
 	description 'Calls recreate. This task is here more for documentation and convenience.'
 	group = "Testing"  
+	vagrantUp.mustRunAfter(destroy)
 }
 
 task ansibleRolesCleanAndInstall { 
@@ -286,7 +290,7 @@ task testIntegrationWithCleanVMParallel() {
 	group = "Testing"
 }
 
-task testIntegrationParallel(dependsOn: 'ansibleRolesCleanAndInstall') {
+task testIntegration(dependsOn: 'ansibleRolesCleanAndInstall') {
 	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
 	doFirst {
 	
@@ -307,16 +311,22 @@ task testIntegrationParallel(dependsOn: 'ansibleRolesCleanAndInstall') {
 	group = "Testing"
 }
 
-task testIntegration(dependsOn: 'ansibleRolesCleanAndInstall') {
+task testIntegrationUbuntu(dependsOn: 'ansibleRolesCleanAndInstall') {
 	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
 	doFirst {	
-		runAnsibleTagsFromHost(ansibleTags, ansibleRolesPath, ansibleVerbosity, ansiblePlaybook)
 		vagrantVMName = 'ubuntu'
 		runAnsibleTagsFromHost(ansibleTags, ansibleRolesPath, ansibleVerbosity, ansiblePlaybook)
 	}
 	group = "Testing"
 }
 
+task testIntegrationCentos(dependsOn: 'ansibleRolesCleanAndInstall') {
+	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
+	doFirst {	
+		runAnsibleTagsFromHost(ansibleTags, ansibleRolesPath, ansibleVerbosity, ansiblePlaybook)
+	}
+	group = "Testing"
+}
 
 task testIntegrationAllTasksDisabled(dependsOn: 'destroy') { 
 	description '''

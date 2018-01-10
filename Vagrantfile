@@ -14,6 +14,7 @@ VM_CPU_CAP = ENV['VM_CPU_CAP'] || 100
 VM_MEMORY = ENV['VM_MEMORY'] || 6144
 VM_GUI = ENV['VM_GUI'] || false
 VB_GUEST = ENV['VB_GUEST'] || false
+VM_VB_NATDNSHOSTRESOLVER = ENV['VM_VB_NATDNSHOSTRESOLVER'] || 'off'
 # Set env var ANSIBLE_GALAXY_FORCE='' to NOT force install of roles
 ANSIBLE_GALAXY_FORCE = ENV['ANSIBLE_GALAXY_FORCE'] || "--force"
 HTTP_PROXY = ENV['HTTP_PROXY']
@@ -73,7 +74,7 @@ Vagrant.configure("2") do |config|
         v.customize ["modifyvm", :id, "--cpuexecutioncap", box[:cpu]]
         v.customize ["modifyvm", :id, "--memory", box[:ram]]
         v.customize ["modifyvm", :id, "--ioapic", "on"]
-        v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+        v.customize ["modifyvm", :id, "--natdnshostresolver1", VM_VB_NATDNSHOSTRESOLVER]
         vms.vm.synced_folder '../', '/vagrant', type: "virtualbox", disabled: false
       end
     

@@ -25,6 +25,7 @@
     - unzip
     - zip
     - nodejs
+    - dnsutils
   become: true
   tags: debug,installpackages
 
