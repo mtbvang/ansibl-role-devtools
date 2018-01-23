@@ -36,6 +36,6 @@ devtools_maven_md5: 516923b3955b6035ba6b0a5b031fbd8b
 devtools_maven_filename: "apache-maven-{{ devtools_maven_version }}-bin.tar.gz"
 devtools_maven_url: "http://mirrors.rackhosting.com/apache/maven/maven-3/{{ devtools_maven_version }}/binaries/{{ devtools_maven_filename }}"
 devtools_maven_home: '/usr/share/maven'
-devtools_gradle_version: 4.3
+devtools_gradle_version: 4.4.1
 
 devtools_npm_registry: https://registry.npmjs.org/

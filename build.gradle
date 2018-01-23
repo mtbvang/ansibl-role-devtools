@@ -45,10 +45,10 @@ def projectParentDir = file(new File("$projectDir/../").absolutePath)
 def vagrantVMName = project.hasProperty('vagrantVMName') ? project.property('vagrantVMName') : 'centos'
 def vagrantProvider = project.hasProperty('vagrantProvider') ? project.property('vagrantProvider') : 'virtualbox'
 def vagrantGui = project.hasProperty('vagrantGui') ? project.property('vagrantGui') : true
-def vagrantVMMemory = project.hasProperty('vagrantVMMemory') ? project.property('vagrantVMMemory') : 6144
+def vagrantVMMemory = project.hasProperty('vagrantVMMemory') ? project.property('vagrantVMMemory') : 2048
 def vagrantTesting = project.hasProperty('vagrantTesting') ? project.property('vagrantTesting') : false
 def vagrantVBGuest = project.hasProperty('vagrantVBGuest') ? project.property('vagrantVBGuest') : true
-def vagrantVMCPUs = project.hasProperty('vagrantVMCPUs') ? project.property('vagrantVMCPUs') : 2
+def vagrantVMCPUs = project.hasProperty('vagrantVMCPUs') ? project.property('vagrantVMCPUs') : 1
 def vagrantHTTPProxy = project.hasProperty('vagrantHTTPProxy') ? project.property('vagrantHTTPProxy') : "${System.env.HTTP_PROXY}"	// Guest OS http_proxy value set by vagrant
 def vagrantHTTPSProxy = project.hasProperty('vagrantHTTPSProxy') ? project.property('vagrantHTTPSProxy') : "${System.env.HTTPS_PROXY}"	// Guest OS https_proxy value set by vagrant
 def vagrantProvision = project.hasProperty('vagrantProvision') ? project.property('vagrantProvision') : '--provision'
@@ -261,12 +261,15 @@ task testIntegrationWithCleanVMParallel() {
 		def commandVagrantUpCentos = commandBase + "vagrant up centos"
 		def commandVagrantUpUbuntu = commandBase + "vagrant up ubuntu"
 		
+		def centosVagrantUpOutput
+		def ubuntuVagrantUpOutput
+		
 		ant.parallel(threadsPerProcessor: 1) { 
-			ant.exec(executable: 'sh') {
+			ant.exec(executable: 'sh', outputproperty: centosVagrantUpOutput) {
 				arg(value: '-c')
 				arg(value: "${commandVagrantUpCentos}")
 			}	
-			ant.exec(executable: 'sh') {
+			ant.exec(executable: 'sh', outputproperty: ubuntuVagrantUpOutput) {
 				arg(value: '-c')
 				arg(value: "${commandVagrantUpUbuntu}")
 			}		
@@ -276,16 +279,22 @@ task testIntegrationWithCleanVMParallel() {
 		def command = "ANSIBLE_ROLES_PATH=${ansibleRolesPath} ansible-playbook --become -i 'localhost,' -c local /vagrant/${project.name}/tests/${ansiblePlaybook} -${ansibleVerbosity} --tags=${ansibleTags}"
 		println command
 	
+		def centosAnsibleRunOutput
+		def ubuntuAnsibleRunOutput
+		
 		ant.parallel(threadsPerProcessor: 1) { 
-			ant.exec(executable: 'sh') {
+			ant.exec(executable: 'sh', outputproperty: centosAnsibleRunOutput) {
 				arg(value: '-c')
 				arg(value: "vagrant ssh centos -c '${command}'")
 			}	
-			ant.exec(executable: 'sh') {
+			ant.exec(executable: 'sh', outputproperty: ubuntuAnsibleRunOutput) {
 				arg(value: '-c')
 				arg(value: "vagrant ssh ubuntu -c '${command}'")
 			}		
 		}
+		
+		println centosAnsibleRunOutput
+		println ubuntuAnsibleRunOutput		
 	}
 	group = "Testing"
 }
@@ -297,27 +306,41 @@ task testIntegration(dependsOn: 'ansibleRolesCleanAndInstall') {
 		def command = "ANSIBLE_ROLES_PATH=${ansibleRolesPath} ansible-playbook --become -i 'localhost,' -c local /vagrant/${project.name}/tests/${ansiblePlaybook} -${ansibleVerbosity} --tags=${ansibleTags}"
 		println command
 	
+		def centosAnsibleRunOutput
+		def ubuntuAnsibleRunOutput
+		
 		ant.parallel(threadsPerProcessor: 1) { 
-			ant.exec(executable: 'sh') {
+			
+			ant.exec(executable: 'sh', outputproperty: centosAnsibleRunOutput) {
 				arg(value: '-c')
 				arg(value: "vagrant ssh centos -c '${command}'")
 			}	
-			ant.exec(executable: 'sh') {
+			ant.exec(executable: 'sh', outputproperty: ubuntuAnsibleRunOutput) {
 				arg(value: '-c')
 				arg(value: "vagrant ssh ubuntu -c '${command}'")
 			}		
 		}
+		
+		println "Centos ansible run output: " + centosAnsibleRunOutput
+		println "Ubuntu ansible run output: " + ubuntuAnsibleRunOutput
 	}
+	
 	group = "Testing"
 }
 
-task testIntegrationUbuntu(dependsOn: 'ansibleRolesCleanAndInstall') {
+task testIntegrationubuntuInit {
+	         
+     vagrantVMName = 'ubuntu'
+}
+
+
+task testIntegrationUbuntu(dependsOn: [ 'testIntegrationubuntuInit', 'ansibleRolesCleanAndInstall']) {
 	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
 	doFirst {	
-		vagrantVMName = 'ubuntu'
 		runAnsibleTagsFromHost(ansibleTags, ansibleRolesPath, ansibleVerbosity, ansiblePlaybook)
 	}
 	group = "Testing"
+	ansibleRolesCleanAndInstall.mustRunAfter(testIntegrationubuntuInit)
 }
 
 task testIntegrationCentos(dependsOn: 'ansibleRolesCleanAndInstall') {

@@ -24,10 +24,16 @@
   become_user: "{{ devtools_user }}"
   tags: gradle
 
+- name: Stat gradle version
+  shell: gradle --version
+  register: gradleversion
+  ignore_errors: true
+  tags: gradle
+
 - name: Install Gradle
   shell: source ~/.sdkman/bin/sdkman-init.sh && sdk install gradle {{ devtools_gradle_version }}
   args:
     executable: /bin/bash
-    creates: /home/{{ devtools_user }}/.sdkman/candidates/gradle/current/bin/gradle
+  when: gradleversion.stdout.find("Gradle {{ devtools_gradle_version }}") == -1
   become_user: "{{ devtools_user }}"
   tags: gradle

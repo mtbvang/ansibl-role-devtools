@@ -42,20 +42,11 @@
   become: true
   tags: java
 
-- name: Test JAVA_HOME set correctly for Centos for {{ devtools_user }} user.
+- name: Test JAVA_HOME set correctly.
   shell: env | grep -i JAVA_HOME
   register: javahome
-  ignore_errors: yes
   become: true
   become_user: "{{ devtools_user }}"
-  failed_when: (javahome.stdout.find("{{ devtools_var_java_home }}") == -1)
-  tags: java,test
-
-- name: Test JAVA_HOME set correctly for Centos for root user.
-  shell: env | grep -i JAVA_HOME
-  register: javahome
-  ignore_errors: yes
-  become: true
   failed_when: (javahome.stdout.find("{{ devtools_var_java_home }}") == -1)
   tags: java,test
 
