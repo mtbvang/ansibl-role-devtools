@@ -21,13 +21,13 @@ dependencies:
       http_proxy: "{{ devtools_http_proxy }}"
     when: ansible_os_family == 'RedHat'
     tags: epel
-  - src: https://github.com/mtbvang/ansible-role-ansible
-    name: ansible
-    ansible_proxy_env: 
-      https_proxy: "{{ devtools_http_proxy }}"
-      http_proxy: "{{ devtools_http_proxy }}"
-    when: devtools_dep_ansible_enabled | bool == true
-    tags: ansible
+#  - src: https://github.com/mtbvang/ansible-role-ansible
+#    name: ansible
+#    ansible_proxy_env: 
+#      https_proxy: "{{ devtools_http_proxy }}"
+#      http_proxy: "{{ devtools_http_proxy }}"
+#    when: devtools_dep_ansible_enabled | bool == true
+#    tags: ansible
   - src: https://github.com/mtbvang/ansible-role-docker-1
     name: docker
     docker_http_proxy: "{{ devtools_http_proxy }}"
