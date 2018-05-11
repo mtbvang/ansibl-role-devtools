@@ -56,7 +56,7 @@ def noProxy = project.hasProperty('noProxy') ? project.property('noProxy'): "${S
 
 def ansibleTags = project.hasProperty('ansibleTags') ? project.property('ansibleTags') : 'all'
 def ansibleVerbosity = project.hasProperty('ansibleVerbosity') ? project.property('ansibleVerbosity') : 'v'
-def ansibleRolesPath = project.hasProperty('ansibleRolesPath') ? project.property('ansibleRolesPath') : "${projectDir}/tests/roles"
+def ansibleRolesPath = project.hasProperty('ansibleRolesPath') ? project.property('ansibleRolesPath') : "/vagrant/${project.name}/tests/roles"
 def ansiblePlaybook = project.hasProperty('ansiblePlaybook') ? project.property('ansiblePlaybook') : 'test.yml'
 def ansibleGalaxyForce = project.hasProperty('ansibleGalaxyForce') ? project.property('ansibleGalaxyForce') : '--force'
 

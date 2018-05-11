@@ -4,7 +4,6 @@
     name: "{{ item }}"
     state: "{{ devtools_yum_state }}"
   with_items:
-    - "{{ devtools_var_java_headless_package_centos }}"
     - "{{ devtools_var_java_package_centos }}"
   tags: installpackages,java
 

@@ -21,6 +21,7 @@ dependencies:
       http_proxy: "{{ devtools_http_proxy }}"
     when: ansible_os_family == 'RedHat'
     tags: epel
+# FIXME: devtools_dep_ansible_enabled when condition is not working from other playbooks. It works from the test playbook of this project though
 #  - src: https://github.com/mtbvang/ansible-role-ansible
 #    name: ansible
 #    ansible_proxy_env: 

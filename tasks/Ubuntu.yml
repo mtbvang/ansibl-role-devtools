@@ -42,14 +42,6 @@
   become: true
   tags: java
 
-- name: Test JAVA_HOME set correctly.
-  shell: env | grep -i JAVA_HOME
-  register: javahome
-  become: true
-  become_user: "{{ devtools_user }}"
-  failed_when: (javahome.stdout.find("{{ devtools_var_java_home }}") == -1)
-  tags: java,test
-
 # Example adhoc command to run debug task.
 # ansible-playbook --connection=ssh --timeout=30 --limit="devhost" --inventory-file=/home/osboxes/code/ansible-role-devtools/.{{ devtools_user }}/provisioners/ansible/inventory --sudo --start-at-task="ansible-role-devtools : Debug variables" --step -vvvv tests/{{ devtools_user }}.yml
 - name: Debugging task. Modify as required.

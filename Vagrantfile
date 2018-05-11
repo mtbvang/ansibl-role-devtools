@@ -73,11 +73,9 @@ Vagrant.configure("2") do |config|
         v.cpus = VM_CPUS
         v.customize ["modifyvm", :id, "--cpuexecutioncap", box[:cpu]]
         v.customize ["modifyvm", :id, "--memory", box[:ram]]
-        v.customize ["modifyvm", :id, "--ioapic", "on"]
-        v.customize ["modifyvm", :id, "--natdnshostresolver1", VM_VB_NATDNSHOSTRESOLVER]
         vms.vm.synced_folder '../', '/vagrant', type: "virtualbox", disabled: false
       end
-    
+      
       vms.vm.provider "vmware_workstation" do |v|
         v.gui = VM_GUI
         v.vmx["memsize"] = box[:ram]
@@ -85,8 +83,7 @@ Vagrant.configure("2") do |config|
       end
 
       if box[:name].eql? "centos"
-        vms.vm.provision "shell",
-        inline: "echo 'Work around for epel bug https://bugs.centos.org/view.php?id=13669&nbn=1' && sudo rpm -ivh --replacepkgs https://kojipkgs.fedoraproject.org/packages/http-parser/2.7.1/3.el7/x86_64/http-parser-2.7.1-3.el7.x86_64.rpm"
+        vms.vm.provision "bootstrapCentos", type: :shell, path: "tests/bootstrap_centos.sh"
       end
     
       if box[:name].eql? "ubuntu"

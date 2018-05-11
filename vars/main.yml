@@ -2,6 +2,7 @@
 # vars file for ansible-role-devtools
 
 # Flags to enable dependencies for devtools specified in meta/main.yml.
+# FIXME These flags don't seem to work. Had to comment out ansible-role-ansible in tassk/main.yml
 devtools_dep_epel_enabled: true
 devtools_dep_ansible_enabled: false
 devtools_dep_docker_enabled: true
