@@ -21,3 +21,6 @@
 - src: https://github.com/mtbvang/ansible-role-ansible
   name: ansible
   version: 1.2.0
+- src: https://github.com/geerlingguy/ansible-role-nodejs
+  name: node
+  version: 4.2.0

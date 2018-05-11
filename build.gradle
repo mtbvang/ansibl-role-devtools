@@ -127,7 +127,7 @@ task vagrantUp(type: Exec) {
 			+ "VM_GUI=$vagrantGui " \
 			+ "VM_CPUS=$vagrantVMCPUs " \
 			+ "VAGRANT_NO_PROXY=$noProxy " \
-			+ "vagrant up ${vagrantVMName}"
+			+ "vagrant up --parallel"
 	}
 }
 
@@ -185,6 +185,13 @@ task recreate(dependsOn: ['destroy', 'up']) {
 	group = "Usefull"
 } 
 
+task vagrantrecreate(dependsOn: ['destroy', 'vagrantUp']) { 
+	description 'Destroy and up the local development VM' 
+	// Ensure task ordering for recreate
+	vagrantUp.mustRunAfter(destroy)
+	group = "Usefull"
+} 
+
 task testUnitFromGuest() { 
 	description "Note: Windows users can't run this role. Run unit style test by using ansible tags to run specific tasks. Tag all your tasks during development so that they can be run to give this style of test.\n" \
 		+ "* Parameter: ansibleTags - default=''. List of tags to run. \n" \
@@ -211,18 +218,6 @@ task testUnit() {
 	group = "Testing"
 }
 
-task testComponent() { 
-	description 'Run component tests by using ansible tags to run specific tasks. Like unitTests task, but use component style ansible tagging.\n' \
-		+ "* Parameter: ansibleTags - default=''. List of tags to run. \n" \
-		+ "* Parameter: ansibleRolePath - default='projectDir/tests/roles'. " \
-		+ "* Example usage: ./gradlew -PansibleTags=dns testcomponent"
-		
-	doFirst { 
-		runAnsibleTags()
-	}	
-	group = "Testing"
-}
-
 task testIntegrationWithCleanVM(dependsOn: [
 	'vagrantUp',
 	'destroy'
@@ -239,116 +234,39 @@ task ansibleRolesCleanAndInstall {
 	}
 }
 
-task testIntegrationWithCleanVMParallel() {
+task testIntegration(dependsOn: ['testIntegrationCentos', 'testIntegrationUbuntu', ]) {
 	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
-	doFirst {
-	
-		exec { 
-			ignoreExitValue = true
-			commandLine "bash", "-c", "vagrant destroy -f" 
-		}
-		
-		def commandBase = "TESTING=$vagrantTesting " \
-			+ "ANSIBLE_PLAYBOOK=$ansiblePlaybook " \
-			+ "ANSIBLE_GALAXY_FORCE=$ansibleGalaxyForce " \
-			+ "VAGRANT_HTTP_PROXY=$vagrantHTTPProxy " \
-			+ "VAGRANT_HTTPS_PROXY=$vagrantHTTPSProxy " \
-			+ "VM_MEMORY=$vagrantVMMemory " \
-			+ "VM_GUI=$vagrantGui " \
-			+ "VM_CPUS=$vagrantVMCPUs " \
-			+ "VAGRANT_NO_PROXY=$noProxy "
-			
-		def commandVagrantUpCentos = commandBase + "vagrant up centos"
-		def commandVagrantUpUbuntu = commandBase + "vagrant up ubuntu"
-		
-		def centosVagrantUpOutput
-		def ubuntuVagrantUpOutput
-		
-		ant.parallel(threadsPerProcessor: 1) { 
-			ant.exec(executable: 'sh', outputproperty: centosVagrantUpOutput) {
-				arg(value: '-c')
-				arg(value: "${commandVagrantUpCentos}")
-			}	
-			ant.exec(executable: 'sh', outputproperty: ubuntuVagrantUpOutput) {
-				arg(value: '-c')
-				arg(value: "${commandVagrantUpUbuntu}")
-			}		
-		}
 
-	
-		def command = "ANSIBLE_ROLES_PATH=${ansibleRolesPath} ansible-playbook --become -i 'localhost,' -c local /vagrant/${project.name}/tests/${ansiblePlaybook} -${ansibleVerbosity} --tags=${ansibleTags}"
-		println command
-	
-		def centosAnsibleRunOutput
-		def ubuntuAnsibleRunOutput
-		
-		ant.parallel(threadsPerProcessor: 1) { 
-			ant.exec(executable: 'sh', outputproperty: centosAnsibleRunOutput) {
-				arg(value: '-c')
-				arg(value: "vagrant ssh centos -c '${command}'")
-			}	
-			ant.exec(executable: 'sh', outputproperty: ubuntuAnsibleRunOutput) {
-				arg(value: '-c')
-				arg(value: "vagrant ssh ubuntu -c '${command}'")
-			}		
-		}
-		
-		println centosAnsibleRunOutput
-		println ubuntuAnsibleRunOutput		
-	}
 	group = "Testing"
 }
 
-task testIntegration(dependsOn: 'ansibleRolesCleanAndInstall') {
-	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
-	doFirst {
-	
-		def command = "ANSIBLE_ROLES_PATH=${ansibleRolesPath} ansible-playbook --become -i 'localhost,' -c local /vagrant/${project.name}/tests/${ansiblePlaybook} -${ansibleVerbosity} --tags=${ansibleTags}"
-		println command
-	
-		def centosAnsibleRunOutput
-		def ubuntuAnsibleRunOutput
-		
-		ant.parallel(threadsPerProcessor: 1) { 
-			
-			ant.exec(executable: 'sh', outputproperty: centosAnsibleRunOutput) {
-				arg(value: '-c')
-				arg(value: "vagrant ssh centos -c '${command}'")
-			}	
-			ant.exec(executable: 'sh', outputproperty: ubuntuAnsibleRunOutput) {
-				arg(value: '-c')
-				arg(value: "vagrant ssh ubuntu -c '${command}'")
-			}		
-		}
-		
-		println "Centos ansible run output: " + centosAnsibleRunOutput
-		println "Ubuntu ansible run output: " + ubuntuAnsibleRunOutput
-	}
-	
-	group = "Testing"
-}
-
-task testIntegrationubuntuInit {
+task testIntegrationUbuntuInit {
 	         
      vagrantVMName = 'ubuntu'
 }
 
 
-task testIntegrationUbuntu(dependsOn: [ 'testIntegrationubuntuInit', 'ansibleRolesCleanAndInstall']) {
+task testIntegrationUbuntu(dependsOn: [ 'testIntegrationUbuntuInit', 'ansibleRolesCleanAndInstall']) {
 	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
 	doFirst {	
 		runAnsibleTagsFromHost(ansibleTags, ansibleRolesPath, ansibleVerbosity, ansiblePlaybook)
 	}
 	group = "Testing"
-	ansibleRolesCleanAndInstall.mustRunAfter(testIntegrationubuntuInit)
+	ansibleRolesCleanAndInstall.mustRunAfter(testIntegrationUbuntuInit)
 }
 
-task testIntegrationCentos(dependsOn: 'ansibleRolesCleanAndInstall') {
+task testIntegrationCentosInit {
+	         
+     vagrantVMName = 'centos'
+}
+
+task testIntegrationCentos(dependsOn: [ 'testIntegrationCentosInit', 'ansibleRolesCleanAndInstall']) {
 	description 'Integration test the role by running vagrant ansibleGalaxy and ansiblePlaybook provisioners within the guest VM. The provisioning scripts run by vagrant will delete all roles to force their download.'
 	doFirst {	
 		runAnsibleTagsFromHost(ansibleTags, ansibleRolesPath, ansibleVerbosity, ansiblePlaybook)
 	}
 	group = "Testing"
+	ansibleRolesCleanAndInstall.mustRunAfter(testIntegrationCentosInit)
 }
 
 task testIntegrationAllTasksDisabled(dependsOn: 'destroy') { 

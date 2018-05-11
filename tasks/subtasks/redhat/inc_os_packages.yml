@@ -9,7 +9,6 @@
     - unzip
     - telnet
     - wget
-    - npm
     - curl
     - chromium
     - bind-utils

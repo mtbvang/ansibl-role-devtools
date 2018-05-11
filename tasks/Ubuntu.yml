@@ -17,23 +17,16 @@
     - openjfx
     - telnet
     - wget
-    - npm
     - python-appindicator    # required for x-tile
     - curl
     - xclip
     - git
     - unzip
     - zip
-    - nodejs
     - dnsutils
   become: true
   tags: debug,installpackages
 
-- name: Symlink nodejs to node
-  shell: ln -s -f /usr/bin/nodejs /usr/bin/node
-  become: true
-  tags: npm,node
-  
 - name: Set java home env var
   lineinfile:
     dest: /etc/environment

@@ -60,3 +60,7 @@ dependencies:
     git_version: "2.9.3"
     when: devtools_dep_git_enabled | bool == true
     tags: git
+  - src: https://github.com/geerlingguy/ansible-role-nodejs
+    name: node
+    nodejs_version: "8.x"
+    tags: node
