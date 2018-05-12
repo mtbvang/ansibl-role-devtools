@@ -10,7 +10,9 @@ lint:
   enabled: False
 platforms:
   - name: centos
-    box: mtbvang/centos7-desktop
+    box: boxcutter/centos7-desktop
+#  - name: ubuntu
+#    box: boxcutter/centos7-desktop
 provisioner:
   name: ansible
   lint:

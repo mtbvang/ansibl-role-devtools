@@ -5,7 +5,7 @@
 #   name: docker-ubuntu
 - src: https://github.com/mtbvang/ansible-role-repo-epel
   name: epel
-  version: 1.2.1
+  version: 1.2.3
 - src: https://github.com/mtbvang/ansible-role-docker-1
   name: docker
   version: 0.1.0
@@ -18,9 +18,9 @@
 - src: https://github.com/geerlingguy/ansible-role-git
   name: git
   version: 1.3.0
-- src: https://github.com/mtbvang/ansible-role-ansible
-  name: ansible
-  version: 1.2.0
+#- src: https://github.com/mtbvang/ansible-role-ansible
+#  name: ansible
+#  version: 1.2.0
 - src: https://github.com/geerlingguy/ansible-role-nodejs
   name: node
   version: 4.2.0

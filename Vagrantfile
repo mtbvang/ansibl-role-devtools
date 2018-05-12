@@ -83,7 +83,7 @@ Vagrant.configure("2") do |config|
       end
 
       if box[:name].eql? "centos"
-        vms.vm.provision "bootstrapCentos", type: :shell, path: "tests/bootstrap_centos.sh"
+#        vms.vm.provision "bootstrapCentos", type: :shell, path: "tests/bootstrap_centos.sh"
       end
     
       if box[:name].eql? "ubuntu"
