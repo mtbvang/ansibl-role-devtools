@@ -2,3 +2,5 @@
 /.vagrant/
 /.project
 /build/
+/.venv/
+/.pydevproject

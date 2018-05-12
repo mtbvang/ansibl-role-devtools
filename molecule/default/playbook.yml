@@ -1,7 +1,8 @@
 ---
 - name: Converge
   become: true
-  hosts:
+  remote_user: root
+  hosts: 
     - all
   pre_tasks:
     - name: Gathering facts

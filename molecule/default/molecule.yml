@@ -11,13 +11,13 @@ lint:
 platforms:
   - name: centos
     box: boxcutter/centos7-desktop
-#  - name: ubuntu
-#    box: boxcutter/centos7-desktop
+  - name: ubuntu
+    box: boxcutter/centos7-desktop
 provisioner:
   name: ansible
   lint:
     name: ansible-lint
-    enabled: False
+    enabled: false
 scenario:
   name: default
 verifier:
