@@ -146,7 +146,7 @@
     - devtools_java_enabled | bool == true
     - ansible_distribution == 'CentOS' 
   with_items:
-    - 'JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk-1.8.0'
+    - 'JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0'
   tags: etcenv,java,test
   
 - name: Check /etc/environment for M2_HOME

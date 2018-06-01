@@ -5,10 +5,7 @@ devtools_var_arch: x86_64
 devtools_var_java18: java-1.8.0-openjdk
 
 # The specific verison is required to setup JAVA_HOME env var.
-devtools_var_java_version_centos: 1.8.0.171
-devtools_var_java_release_centos: 7.b10.el7
 devtools_var_java_package_centos: "{{ devtools_var_java18 }}-devel"
-devtools_var_java_home_centos: "/usr/lib/jvm/{{ devtools_var_java18 }}-{{ devtools_var_java_version_centos }}-{{ devtools_var_java_release_centos }}.{{ devtools_var_arch }}/jre"
 
 devtools_var_java_version: 1.8.0.111
 devtools_var_java_epoch: 1
